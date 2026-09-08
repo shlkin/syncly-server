@@ -1,5 +1,15 @@
 <!-- markdownlint-disable MD013 MD033 MD041 -->
 
+<!-- syncly-fork-banner -->
+> ### 这是一个 fork，为 **Syncly** 提供服务端
+>
+> 在上游之上加了「爱的小窝」的数据表与接口、由管理员统一发布的影视订阅源、
+> 会真正转移积分（而不是销毁）的礼物，以及绑定过的情侣不必互加好友即可私信，
+> 完整清单见 **[FORK.md](./FORK.md)**。下面是上游自己的 README，仍然准确地描述了它所基于的东西。
+>
+> 上游：[synctv-org/synctv](https://github.com/synctv-org/synctv)，MIT，本 fork 沿用。
+
+
 <p align="center">
   <img src="./docs/public/logo.svg" alt="SyncTV" width="180">
 </p>

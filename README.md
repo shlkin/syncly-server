@@ -1,5 +1,18 @@
 <!-- markdownlint-disable MD013 MD033 MD041 -->
 
+<!-- syncly-fork-banner -->
+> ### This is a fork, serving **Syncly**
+>
+> It adds the 爱的小窝 tables and endpoints, 影视 subscription sources an
+> administrator publishes once, gifts that transfer points instead of burning
+> them, and messaging that a bound couple may use without also being friends —
+> **[FORK.md](./FORK.md)** covers all of it. Everything below is upstream's own
+> README and still describes what this is built on.
+>
+> Upstream: [synctv-org/synctv](https://github.com/synctv-org/synctv), MIT,
+> which this keeps.
+
+
 <p align="center">
   <img src="./docs/public/logo.svg" alt="SyncTV" width="180">
 </p>
