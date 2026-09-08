@@ -126,6 +126,44 @@ service AdminService {
   rpc ListContentReports(ListContentReportsRequest) returns (ListContentReportsResponse);
   rpc GetContentReport(GetContentReportRequest) returns (ContentReport);
   rpc UpdateContentReportStatus(UpdateContentReportStatusRequest) returns (UpdateContentReportStatusResponse);
+
+  // =========================
+  // Daily Check-in Rules
+  // =========================
+  rpc GetCheckInConfig(GetCheckInConfigRequest) returns (GetCheckInConfigResponse);
+  rpc UpdateCheckInConfig(UpdateCheckInConfigRequest) returns (UpdateCheckInConfigResponse);
+
+  // =========================
+  // 礼物 Catalog
+  // =========================
+  rpc ListGiftCatalog(ListGiftCatalogRequest) returns (ListGiftCatalogResponse);
+  rpc ListGiftRecords(ListGiftRecordsRequest) returns (ListGiftRecordsResponse);
+  rpc ListPointTransactions(ListPointTransactionsRequest) returns (ListPointTransactionsResponse);
+  rpc CreateGift(CreateGiftRequest) returns (CreateGiftResponse);
+  rpc UpdateGift(UpdateGiftRequest) returns (UpdateGiftResponse);
+  rpc DeleteGift(DeleteGiftRequest) returns (DeleteGiftResponse);
+
+  // =========================
+  // 群聊 Moderation
+  // =========================
+  // Unscoped reads over the social conversations. The client-facing calls
+  // resolve the caller's membership first and answer "not found" to anyone
+  // else, because whether a conversation exists is itself private; moderation
+  // needs the opposite, so these are admin-gated instead of membership-gated.
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  rpc ListConversationMembers(ListConversationMembersRequest) returns (ListConversationMembersResponse);
+  rpc ListConversationMessages(ListConversationMessagesRequest) returns (ListConversationMessagesResponse);
+
+  // =========================
+  // 影视 Subscription Sources
+  // =========================
+  // The client-facing list returns enabled entries only; these return every
+  // row, because a disabled source stays editable — that is how one is retired
+  // without losing what it was.
+  rpc ListVodSources(ListVodSourcesRequest) returns (ListVodSourcesResponse);
+  rpc CreateVodSource(CreateVodSourceRequest) returns (CreateVodSourceResponse);
+  rpc UpdateVodSource(UpdateVodSourceRequest) returns (UpdateVodSourceResponse);
+  rpc DeleteVodSource(DeleteVodSourceRequest) returns (DeleteVodSourceResponse);
 }
 
 // =========================
@@ -1839,3 +1877,426 @@ message BatchDeleteRoomsResponse {
   int32 succeeded = 2; // Count of successful operations
   int32 failed = 3; // Count of failed operations
 }
+
+// =========================
+// Daily Check-in Rules
+// =========================
+
+message GetCheckInConfigRequest {}
+
+message GetCheckInConfigResponse {
+  synctv.client.CheckInConfig config = 1;
+}
+
+// A partial update: omitted fields keep their stored value. The random range is
+// validated against the stored bound when only one end is being moved, so an
+// admin may raise the maximum without restating the minimum.
+message UpdateCheckInConfigRequest {
+  optional bool enabled = 1;
+  optional synctv.client.CheckInAwardMode award_mode = 2 [(buf.validate.field).enum.defined_only = true];
+  optional int32 fixed_points = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100000
+  }];
+  optional int32 random_min_points = 4 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100000
+  }];
+  optional int32 random_max_points = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100000
+  }];
+  // Minutes east of UTC that decide which calendar day a claim lands on.
+  optional int32 day_boundary_offset_minutes = 6 [(buf.validate.field).int32 = {
+    gte: -720
+    lte: 840
+  }];
+}
+
+message UpdateCheckInConfigResponse {
+  synctv.client.CheckInConfig config = 1;
+}
+
+// =========================
+// 礼物 Catalog
+// =========================
+
+// Every gift on the server, newest first: who sent it, who got it, what it cost.
+message ListGiftRecordsRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_gift_records.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "admin_list_gift_records.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+
+  int32 page = 1;
+  int32 page_size = 2;
+  // Matches either side of the send. Empty reads everything.
+  string search = 3 [(buf.validate.field).string = {max_len: 100}];
+}
+
+message GiftRecordEntry {
+  string id = 1;
+  string sender_user_id = 2;
+  string sender_username = 3;
+  // Empty when that account has since been deleted.
+  string recipient_user_id = 4;
+  string recipient_username = 5;
+  string room_id = 6;
+  string gift_key = 7;
+  string gift_name = 8;
+  string gift_icon = 9;
+  int32 unit_price_points = 10;
+  int32 quantity = 11;
+  int64 total_points = 12;
+  string message = 13;
+  int64 created_at = 14;
+}
+
+message ListGiftRecordsResponse {
+  repeated GiftRecordEntry records = 1;
+  int32 total = 2;
+}
+
+// The points ledger across all accounts: every credit and debit, in order.
+message ListPointTransactionsRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_point_transactions.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "admin_list_point_transactions.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+
+  int32 page = 1;
+  int32 page_size = 2;
+  // Restrict to one account. Empty reads every account.
+  string user_id = 3 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+  // Restrict to one cause, e.g. "gift_send". Empty reads every cause.
+  string reason = 4 [(buf.validate.field).string = {max_len: 40}];
+}
+
+message PointTransactionEntry {
+  string id = 1;
+  string user_id = 2;
+  string username = 3;
+  int64 delta = 4;
+  int64 balance_after = 5;
+  string reason = 6;
+  string description = 7;
+  int64 created_at = 8;
+}
+
+message ListPointTransactionsResponse {
+  repeated PointTransactionEntry transactions = 1;
+  int32 total = 2;
+}
+
+message ListGiftCatalogRequest {
+  // Admin screens keep disabled entries editable, so both are returned by
+  // default; set true to preview what a send panel sees.
+  bool enabled_only = 1;
+}
+
+message ListGiftCatalogResponse {
+  repeated synctv.client.Gift gifts = 1;
+}
+
+message CreateGiftRequest {
+  // Lowercase, digits and underscores. Records snapshot it, so it is immutable
+  // once created.
+  string key = 1 [(buf.validate.field).string = {
+    min_len: 2
+    max_len: 40
+    pattern: "^[a-z0-9_]+$"
+  }];
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 40
+  }];
+  string description = 3 [(buf.validate.field).string = {max_len: 200}];
+  string icon = 4 [(buf.validate.field).string = {max_len: 300}];
+  int32 price_points = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000000
+  }];
+  int32 sort_order = 6;
+  bool is_enabled = 7;
+}
+
+message CreateGiftResponse {
+  synctv.client.Gift gift = 1;
+}
+
+// A partial update: omitted fields keep their stored value. `key` is absent by
+// design — a rename would orphan the snapshots already written into records.
+message UpdateGiftRequest {
+  string gift_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^gift_[A-Za-z0-9]+$"
+  }];
+  optional string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 40
+  }];
+  optional string description = 3 [(buf.validate.field).string = {max_len: 200}];
+  optional string icon = 4 [(buf.validate.field).string = {max_len: 300}];
+  optional int32 price_points = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000000
+  }];
+  optional int32 sort_order = 6;
+  optional bool is_enabled = 7;
+}
+
+message UpdateGiftResponse {
+  synctv.client.Gift gift = 1;
+}
+
+// Refused once the entry has been sent; disable it instead so the records that
+// reference it stay readable.
+message DeleteGiftRequest {
+  string gift_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^gift_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteGiftResponse {}
+
+// =========================
+// 群聊 Moderation
+// =========================
+
+message ListConversationsRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_conversations.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "admin_list_conversations.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+
+  int32 page = 1;
+  int32 page_size = 2;
+  // Matches a group title or any member's username, so a report about one
+  // account finds the threads it appears in. Empty reads everything.
+  string search = 3 [(buf.validate.field).string = {max_len: 100}];
+  // Narrows to groups or direct threads. Unspecified reads both.
+  synctv.client.ConversationKind kind = 4;
+}
+
+// A conversation as moderation sees it. No read cursor and no mute state: those
+// answer "how does this member see it", and an administrator is not a member.
+message AdminConversation {
+  string id = 1;
+  synctv.client.ConversationKind kind = 2;
+  // Empty for direct threads, which have no title of their own.
+  string title = 3;
+  // Empty for a direct thread, or when the creator's account is gone.
+  string owner_user_id = 4;
+  string owner_username = 5;
+  int64 member_count = 6;
+  // Messages still standing; a withdrawn message is not counted.
+  int64 message_count = 7;
+  int64 last_message_at = 8;
+  int64 created_at = 9;
+}
+
+message ListConversationsResponse {
+  repeated AdminConversation conversations = 1;
+  int32 total = 2;
+}
+
+message ListConversationMembersRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_conversation_members.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "admin_list_conversation_members.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message AdminConversationMember {
+  string user_id = 1;
+  string username = 2;
+  synctv.client.ConversationMemberRole role = 3;
+  int64 joined_at = 4;
+}
+
+message ListConversationMembersResponse {
+  repeated AdminConversationMember members = 1;
+  int32 total = 2;
+}
+
+message ListConversationMessagesRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_conversation_messages.limit"
+    message: "limit must be 0 (use default) or between 1 and 100"
+    expression: "this.limit == 0 || (this.limit >= 1 && this.limit <= 100)"
+  };
+
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  // Pages backwards from the newest message. Empty starts at the newest.
+  string before_message_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(smsg_[A-Za-z0-9]+)?$"
+  }];
+  int32 limit = 3;
+}
+
+message AdminConversationMessage {
+  string id = 1;
+  // Empty for the system lines recording joins, leaves and renames, and for
+  // text whose author has since been deleted.
+  string sender_user_id = 2;
+  string sender_username = 3;
+  synctv.client.SocialMessageKind kind = 4;
+  // Empty when deleted is true. A withdrawn message stays withdrawn here too:
+  // moderation reads the thread as it stands, it does not recover what was
+  // taken back.
+  string body = 5;
+  int64 created_at = 6;
+  bool deleted = 7;
+}
+
+message ListConversationMessagesResponse {
+  repeated AdminConversationMessage messages = 1;
+}
+
+// =========================
+// 影视 Subscription Sources
+// =========================
+
+// Moderation's view of a source: it carries `enabled`, which the client-facing
+// message does not, because a client is only ever handed enabled ones.
+message AdminVodSource {
+  string id = 1;
+  string name = 2;
+  synctv.client.VodSourceFormat format = 3;
+  string endpoint = 4;
+  map<string, string> headers = 5;
+  bool enabled = 6;
+  int32 sort_order = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message ListVodSourcesRequest {
+  option (buf.validate.message).cel = {
+    id: "admin_list_vod_sources.page"
+    message: "page must be at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "admin_list_vod_sources.page_size"
+    message: "page_size must be between 1 and 200"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 200)"
+  };
+
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListVodSourcesResponse {
+  repeated AdminVodSource sources = 1;
+  int32 total = 2;
+}
+
+message CreateVodSourceRequest {
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 120
+  }];
+  synctv.client.VodSourceFormat format = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // Absolute http/https. The client fetches this directly, from a device that
+  // shares no origin with this server, so a relative address has no meaning.
+  string endpoint = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+  map<string, string> headers = 4 [(buf.validate.field).map = {max_pairs: 16}];
+  bool enabled = 5;
+  int32 sort_order = 6;
+}
+
+message CreateVodSourceResponse {
+  AdminVodSource source = 1;
+}
+
+// A partial update: omitted fields keep their stored value, so a form that only
+// touched the name does not have to resend the endpoint and its headers.
+message UpdateVodSourceRequest {
+  string source_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^vsrc_[A-Za-z0-9]+$"
+  }];
+  optional string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 120
+  }];
+  optional synctv.client.VodSourceFormat format = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  optional string endpoint = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+  // A map cannot be `optional` in proto3, so this flag carries the presence:
+  // set it to replace the whole bag with `headers`, which an empty map clears.
+  bool replace_headers = 5;
+  map<string, string> headers = 6 [(buf.validate.field).map = {max_pairs: 16}];
+  optional bool enabled = 7;
+  optional int32 sort_order = 8;
+}
+
+message UpdateVodSourceResponse {
+  AdminVodSource source = 1;
+}
+
+message DeleteVodSourceRequest {
+  string source_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^vsrc_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteVodSourceResponse {}

@@ -83,6 +83,138 @@ service UserService {
   rpc UnblockUser(UnblockUserRequest) returns (UnblockUserResponse);
   rpc ListBlockedUsers(ListBlockedUsersRequest) returns (ListBlockedUsersResponse);
 
+  // Public profiles and the follow graph
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc UpdateUserSignature(UpdateUserSignatureRequest) returns (UpdateUserSignatureResponse);
+  rpc CreateUserProfileBackgroundUploadSession(CreateUserProfileBackgroundUploadSessionRequest) returns (CreateUserProfileBackgroundUploadSessionResponse);
+  rpc UploadUserProfileBackgroundObject(UploadUserProfileBackgroundObjectRequest) returns (UploadUserProfileBackgroundObjectResponse);
+  rpc CompleteUserProfileBackgroundUploadSession(CompleteUserProfileBackgroundUploadSessionRequest) returns (CompleteUserProfileBackgroundUploadSessionResponse);
+  rpc GetUserProfileBackgroundObject(GetUserProfileBackgroundObjectRequest) returns (stream UserProfileBackgroundObjectResponse);
+  rpc UpdateUserProfileBackground(UpdateUserProfileBackgroundRequest) returns (UpdateUserProfileBackgroundResponse);
+  rpc ClearUserProfileBackground(ClearUserProfileBackgroundRequest) returns (UpdateUserProfileBackgroundResponse);
+  rpc FollowUser(FollowUserRequest) returns (FollowUserResponse);
+  rpc UnfollowUser(UnfollowUserRequest) returns (UnfollowUserResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc GetPrivacySettings(GetPrivacySettingsRequest) returns (PrivacySettings);
+  rpc UpdatePrivacySettings(UpdatePrivacySettingsRequest) returns (PrivacySettings);
+  rpc ListFollowing(ListFollowingRequest) returns (ListFollowingResponse);
+  rpc ListFollowers(ListFollowersRequest) returns (ListFollowersResponse);
+
+  // Watch history and starred media
+  rpc RecordWatchHistory(RecordWatchHistoryRequest) returns (RecordWatchHistoryResponse);
+  rpc ListWatchHistory(ListWatchHistoryRequest) returns (ListWatchHistoryResponse);
+  rpc DeleteWatchHistoryEntry(DeleteWatchHistoryEntryRequest) returns (DeleteWatchHistoryEntryResponse);
+  rpc ClearWatchHistory(ClearWatchHistoryRequest) returns (ClearWatchHistoryResponse);
+  rpc AddMediaFavorite(AddMediaFavoriteRequest) returns (AddMediaFavoriteResponse);
+  rpc RemoveMediaFavorite(RemoveMediaFavoriteRequest) returns (RemoveMediaFavoriteResponse);
+  rpc ListMediaFavorites(ListMediaFavoritesRequest) returns (ListMediaFavoritesResponse);
+  rpc GetMediaFavoriteStates(GetMediaFavoriteStatesRequest) returns (GetMediaFavoriteStatesResponse);
+
+  // Daily check-in and the points it awards
+  rpc GetCheckInStatus(GetCheckInStatusRequest) returns (GetCheckInStatusResponse);
+  rpc ClaimCheckIn(ClaimCheckInRequest) returns (ClaimCheckInResponse);
+  rpc ListPointTransactions(ListPointTransactionsRequest) returns (ListPointTransactionsResponse);
+
+  // 礼物: the catalog, sending one, and the resulting records
+  rpc ListGifts(ListGiftsRequest) returns (ListGiftsResponse);
+  rpc SendGift(SendGiftRequest) returns (SendGiftResponse);
+  rpc ListGiftRecords(ListGiftRecordsRequest) returns (ListGiftRecordsResponse);
+  rpc ListUserGiftShowcase(ListUserGiftShowcaseRequest) returns (ListUserGiftShowcaseResponse);
+  rpc ListRoomGifts(ListRoomGiftsRequest) returns (ListRoomGiftsResponse);
+  rpc GetGiftStats(GetGiftStatsRequest) returns (GetGiftStatsResponse);
+
+  // 影视 subscription sources the server publishes. Read-only here: a client
+  // may browse them but may not edit them, which is what separates a server
+  // source from one the user typed in on their own device.
+  rpc ListVodSources(ListVodSourcesRequest) returns (ListVodSourcesResponse);
+
+  // 情侣空间
+  rpc GetCoupleSpace(GetCoupleSpaceRequest) returns (GetCoupleSpaceResponse);
+  rpc InviteCouplePartner(InviteCouplePartnerRequest) returns (InviteCouplePartnerResponse);
+  rpc AcceptCoupleInvite(AcceptCoupleInviteRequest) returns (AcceptCoupleInviteResponse);
+  rpc DismissCoupleInvite(DismissCoupleInviteRequest) returns (DismissCoupleInviteResponse);
+  rpc UnbindCoupleSpace(UnbindCoupleSpaceRequest) returns (UnbindCoupleSpaceResponse);
+  rpc UpdateCoupleSpace(UpdateCoupleSpaceRequest) returns (UpdateCoupleSpaceResponse);
+  rpc AddCoupleFavorite(AddCoupleFavoriteRequest) returns (AddCoupleFavoriteResponse);
+  rpc RemoveCoupleFavorite(RemoveCoupleFavoriteRequest) returns (RemoveCoupleFavoriteResponse);
+  rpc ListCoupleFavorites(ListCoupleFavoritesRequest) returns (ListCoupleFavoritesResponse);
+  rpc ListCoupleSharedWatchEntries(ListCoupleSharedWatchEntriesRequest) returns (ListCoupleSharedWatchEntriesResponse);
+
+  // 爱的小窝: the nest a bound pair keeps. Everything below is gated on being a
+  // member of the space named in the request — a space has exactly two members
+  // and both may read and write all of it.
+  rpc GetCoupleNestHome(GetCoupleNestHomeRequest) returns (GetCoupleNestHomeResponse);
+
+  // 时光轴
+  rpc ListCoupleMemories(ListCoupleMemoriesRequest) returns (ListCoupleMemoriesResponse);
+  rpc CreateCoupleMemory(CreateCoupleMemoryRequest) returns (CreateCoupleMemoryResponse);
+  rpc UpdateCoupleMemory(UpdateCoupleMemoryRequest) returns (UpdateCoupleMemoryResponse);
+  rpc DeleteCoupleMemory(DeleteCoupleMemoryRequest) returns (DeleteCoupleMemoryResponse);
+
+  // 相册
+  rpc ListCoupleAlbums(ListCoupleAlbumsRequest) returns (ListCoupleAlbumsResponse);
+  rpc CreateCoupleAlbum(CreateCoupleAlbumRequest) returns (CreateCoupleAlbumResponse);
+  rpc RenameCoupleAlbum(RenameCoupleAlbumRequest) returns (RenameCoupleAlbumResponse);
+  rpc DeleteCoupleAlbum(DeleteCoupleAlbumRequest) returns (DeleteCoupleAlbumResponse);
+
+  // 媒体
+  rpc ListCoupleMedia(ListCoupleMediaRequest) returns (ListCoupleMediaResponse);
+  rpc AddCoupleMedia(AddCoupleMediaRequest) returns (AddCoupleMediaResponse);
+  rpc MoveCoupleMedia(MoveCoupleMediaRequest) returns (MoveCoupleMediaResponse);
+  rpc DeleteCoupleMedia(DeleteCoupleMediaRequest) returns (DeleteCoupleMediaResponse);
+  rpc SetCoupleSpaceCover(SetCoupleSpaceCoverRequest) returns (SetCoupleSpaceCoverResponse);
+
+  // 纪念日
+  rpc ListCoupleAnniversaries(ListCoupleAnniversariesRequest) returns (ListCoupleAnniversariesResponse);
+  rpc CreateCoupleAnniversary(CreateCoupleAnniversaryRequest) returns (CreateCoupleAnniversaryResponse);
+  rpc UpdateCoupleAnniversary(UpdateCoupleAnniversaryRequest) returns (UpdateCoupleAnniversaryResponse);
+  rpc DeleteCoupleAnniversary(DeleteCoupleAnniversaryRequest) returns (DeleteCoupleAnniversaryResponse);
+
+  // 清单
+  rpc ListCoupleTodos(ListCoupleTodosRequest) returns (ListCoupleTodosResponse);
+  rpc CreateCoupleTodo(CreateCoupleTodoRequest) returns (CreateCoupleTodoResponse);
+  rpc UpdateCoupleTodo(UpdateCoupleTodoRequest) returns (UpdateCoupleTodoResponse);
+  rpc DeleteCoupleTodo(DeleteCoupleTodoRequest) returns (DeleteCoupleTodoResponse);
+
+  // 宠物小屋
+  rpc GetCouplePet(GetCouplePetRequest) returns (GetCouplePetResponse);
+  rpc AdoptCouplePet(AdoptCouplePetRequest) returns (AdoptCouplePetResponse);
+  rpc InteractWithCouplePet(InteractWithCouplePetRequest) returns (InteractWithCouplePetResponse);
+  rpc UpdateCouplePet(UpdateCouplePetRequest) returns (UpdateCouplePetResponse);
+  rpc GetCouplePetHistory(GetCouplePetHistoryRequest) returns (GetCouplePetHistoryResponse);
+
+  // 心动 AI
+  rpc ListCoupleAiWorks(ListCoupleAiWorksRequest) returns (ListCoupleAiWorksResponse);
+  rpc SaveCoupleAiWork(SaveCoupleAiWorkRequest) returns (SaveCoupleAiWorkResponse);
+  rpc DeleteCoupleAiWork(DeleteCoupleAiWorkRequest) returns (DeleteCoupleAiWorkResponse);
+
+  // Friends
+  rpc SendFriendRequest(SendFriendRequestRequest) returns (SendFriendRequestResponse);
+  rpc AcceptFriendRequest(AcceptFriendRequestRequest) returns (AcceptFriendRequestResponse);
+  rpc DeclineFriendRequest(DeclineFriendRequestRequest) returns (DeclineFriendRequestResponse);
+  rpc CancelFriendRequest(CancelFriendRequestRequest) returns (CancelFriendRequestResponse);
+  rpc ListFriendRequests(ListFriendRequestsRequest) returns (ListFriendRequestsResponse);
+  rpc ListFriends(ListFriendsRequest) returns (ListFriendsResponse);
+  rpc RemoveFriend(RemoveFriendRequest) returns (RemoveFriendResponse);
+  rpc GetSocialUnreadSummary(GetSocialUnreadSummaryRequest) returns (GetSocialUnreadSummaryResponse);
+
+  // Direct threads and group chats
+  rpc OpenDirectConversation(OpenDirectConversationRequest) returns (OpenDirectConversationResponse);
+  rpc CreateGroupConversation(CreateGroupConversationRequest) returns (CreateGroupConversationResponse);
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+  rpc ListConversationMessages(ListConversationMessagesRequest) returns (ListConversationMessagesResponse);
+  rpc SendConversationMessage(SendConversationMessageRequest) returns (SendConversationMessageResponse);
+  rpc DeleteConversationMessage(DeleteConversationMessageRequest) returns (DeleteConversationMessageResponse);
+  rpc MarkConversationRead(MarkConversationReadRequest) returns (MarkConversationReadResponse);
+  rpc SetConversationMuted(SetConversationMutedRequest) returns (SetConversationMutedResponse);
+  rpc ListConversationMembers(ListConversationMembersRequest) returns (ListConversationMembersResponse);
+  rpc AddConversationMembers(AddConversationMembersRequest) returns (AddConversationMembersResponse);
+  rpc RemoveConversationMember(RemoveConversationMemberRequest) returns (RemoveConversationMemberResponse);
+  rpc LeaveConversation(LeaveConversationRequest) returns (LeaveConversationResponse);
+  rpc SetConversationTitle(SetConversationTitleRequest) returns (SetConversationTitleResponse);
+  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
+
   // User-initiated room lifecycle operations outside room-scoped context
   rpc CreateRoom(CreateRoomRequest) returns (Room);
   rpc GetRoom(GetRoomRequest) returns (GetRoomResponse);
@@ -346,6 +478,1322 @@ message ListBlockedUsersResponse {
   int32 total = 2;
 }
 
+// One account as its public profile page presents it, including how the pair
+// (viewer, subject) relates. Both flags are false for a signed-out reader.
+message UserProfile {
+  UserPublicView user = 1;
+  // Empty when the account has not written one.
+  string signature = 2;
+  int64 following_count = 3;
+  int64 follower_count = 4;
+  bool viewer_following = 5;
+  bool following_viewer = 6;
+  // The picture behind the page header. Empty means the default backdrop.
+  string background_url = 7;
+  FileObjectAccess background_access = 8;
+  // Whether this profile lets anyone but its owner open the two lists. The
+  // counts above are reported either way; a private account is not an empty one.
+  bool show_following = 9;
+  bool show_followers = 10;
+}
+
+// One end of a follow edge, listed on the following and followers pages.
+message FollowedUser {
+  UserPublicView user = 1;
+  int64 followed_at = 2;
+  // The two accounts follow each other.
+  bool mutual = 3;
+}
+
+message GetUserProfileRequest {
+  // Omit to read the caller's own profile.
+  string user_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+}
+
+message GetUserProfileResponse {
+  UserProfile profile = 1;
+}
+
+message UpdateUserSignatureRequest {
+  // Empty clears the signature.
+  string signature = 1 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message UpdateUserSignatureResponse {
+  string signature = 1;
+}
+
+message FollowUserRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+}
+
+message FollowUserResponse {
+  FollowedUser followed_user = 1;
+}
+
+message UnfollowUserRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+}
+
+message UnfollowUserResponse {
+  bool success = 1;
+}
+
+message ListFollowingRequest {
+  option (buf.validate.message).cel = {
+    id: "list_following.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_following.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  // Omit to list the caller's own following.
+  string user_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+  string search = 4 [(buf.validate.field).string = {max_len: 100}];
+}
+
+message ListFollowingResponse {
+  repeated FollowedUser users = 1;
+  int32 total = 2;
+}
+
+message ListFollowersRequest {
+  option (buf.validate.message).cel = {
+    id: "list_followers.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_followers.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  // Omit to list the caller's own followers.
+  string user_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+  string search = 4 [(buf.validate.field).string = {max_len: 100}];
+}
+
+message ListFollowersResponse {
+  repeated FollowedUser users = 1;
+  int32 total = 2;
+}
+
+// ==================== Watch history and media favorites ====================
+
+// One title the caller has watched, newest activity first in listings.
+message WatchHistoryEntry {
+  string id = 1;
+  // Empty once the room or media has been deleted: the entry still reads, but
+  // there is nowhere left to resume.
+  string room_id = 2;
+  string media_id = 3;
+  string title = 4;
+  string cover_url = 5;
+  double position_seconds = 6;
+  // Zero when the client did not know the total length.
+  double duration_seconds = 7;
+  // Stable identity of the title across rooms; also the key favorites use.
+  string source_key = 8;
+  int64 watched_at = 9;
+}
+
+// Recording the same source_key again moves the entry and updates the position,
+// so a client may call this on a timer.
+message RecordWatchHistoryRequest {
+  string room_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(room_[A-Za-z0-9]+)?$"
+  }];
+  string media_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(med_[A-Za-z0-9]+)?$"
+  }];
+  string title = 3 [(buf.validate.field).string = {max_len: 300}];
+  string cover_url = 4 [(buf.validate.field).string = {max_len: 500}];
+  double position_seconds = 5 [(buf.validate.field).double = {gte: 0}];
+  double duration_seconds = 6 [(buf.validate.field).double = {gte: 0}];
+  string source_key = 7 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message RecordWatchHistoryResponse {
+  WatchHistoryEntry entry = 1;
+}
+message ListWatchHistoryRequest {
+  option (buf.validate.message).cel = {
+    id: "list_watch_history.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_watch_history.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListWatchHistoryResponse {
+  repeated WatchHistoryEntry entries = 1;
+  int32 total = 2;
+}
+
+message DeleteWatchHistoryEntryRequest {
+  string entry_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^wh_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteWatchHistoryEntryResponse {
+  bool success = 1;
+}
+
+message ClearWatchHistoryRequest {}
+
+message ClearWatchHistoryResponse {
+  int64 deleted_count = 1;
+}
+
+// A starred title. Stars are per account and keyed by source_key, so the same
+// title starred from two rooms is one entry.
+message MediaFavorite {
+  string id = 1;
+  string room_id = 2;
+  string media_id = 3;
+  string title = 4;
+  string cover_url = 5;
+  string source_key = 6;
+  int64 created_at = 7;
+}
+// Starring an already-starred source_key refreshes its title and cover instead
+// of failing, so the button is a plain toggle.
+message AddMediaFavoriteRequest {
+  string room_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(room_[A-Za-z0-9]+)?$"
+  }];
+  string media_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(med_[A-Za-z0-9]+)?$"
+  }];
+  string title = 3 [(buf.validate.field).string = {max_len: 300}];
+  string cover_url = 4 [(buf.validate.field).string = {max_len: 500}];
+  string source_key = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message AddMediaFavoriteResponse {
+  MediaFavorite favorite = 1;
+}
+
+message RemoveMediaFavoriteRequest {
+  string source_key = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message RemoveMediaFavoriteResponse {
+  bool success = 1;
+}
+
+message ListMediaFavoritesRequest {
+  option (buf.validate.message).cel = {
+    id: "list_media_favorites.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_media_favorites.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  int32 page = 1;
+  int32 page_size = 2;
+}
+message ListMediaFavoritesResponse {
+  repeated MediaFavorite favorites = 1;
+  int32 total = 2;
+}
+
+// Which of these titles the caller has starred, so a list screen can draw the
+// star state for a page of results in one call.
+message GetMediaFavoriteStatesRequest {
+  repeated string source_keys = 1 [(buf.validate.field).repeated = {
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 200
+      }
+    }
+  }];
+}
+
+message GetMediaFavoriteStatesResponse {
+  repeated string favorited_source_keys = 1;
+}
+
+// ==================== Daily check-in and points ====================
+
+enum CheckInAwardMode {
+  CHECK_IN_AWARD_MODE_UNSPECIFIED = 0;
+  // Every claim awards fixed_points.
+  CHECK_IN_AWARD_MODE_FIXED = 1;
+  // Every claim draws uniformly from the configured inclusive range.
+  CHECK_IN_AWARD_MODE_RANDOM = 2;
+}
+
+// The server-wide check-in rules. Readable by any account so the card can render
+// what a claim is worth; only admins may change it.
+message CheckInConfig {
+  // False disables claiming entirely; the card still renders.
+  bool enabled = 1;
+  CheckInAwardMode award_mode = 2;
+  int32 fixed_points = 3;
+  int32 random_min_points = 4;
+  int32 random_max_points = 5;
+  // Minutes east of UTC that decide which calendar day a claim lands on.
+  int32 day_boundary_offset_minutes = 6;
+  int64 updated_at = 7;
+  // Empty while the defaults have never been edited.
+  string updated_by_user_id = 8;
+}
+message GetCheckInStatusRequest {}
+
+message GetCheckInStatusResponse {
+  CheckInConfig config = 1;
+  // The calendar day (YYYY-MM-DD) the server would credit a claim to right now.
+  string today = 2;
+  bool checked_in_today = 3;
+  // Consecutive days including today when already claimed, else the streak a
+  // claim today would continue.
+  int32 streak = 4;
+  // Empty when the account has never claimed.
+  string last_check_in_date = 5;
+  int64 balance = 6;
+  int64 total_earned = 7;
+}
+
+message ClaimCheckInRequest {}
+
+message ClaimCheckInResponse {
+  string check_in_date = 1;
+  int32 points_awarded = 2;
+  int32 streak = 3;
+  int64 balance = 4;
+  int64 total_earned = 5;
+  // True when today's claim already existed. The response then describes that
+  // earlier claim and awards nothing, so a retry is not a failure.
+  bool already_checked_in = 6;
+}
+
+// One movement of the points balance.
+message PointTransaction {
+  string id = 1;
+  // Signed: positive for awards, negative for spending.
+  int64 delta = 2;
+  int64 balance_after = 3;
+  // Machine-readable cause, e.g. "check_in".
+  string reason = 4;
+  string description = 5;
+  int64 created_at = 6;
+}
+
+message ListPointTransactionsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_point_transactions.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_point_transactions.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  int32 page = 1;
+  int32 page_size = 2;
+}
+message ListPointTransactionsResponse {
+  repeated PointTransaction transactions = 1;
+  int32 total = 2;
+}
+
+// ==================== 礼物 (gifts) ====================
+
+// One catalog entry. Prices are in the same points the check-in awards.
+message Gift {
+  string id = 1;
+  // Stable machine key, e.g. "flower". Records snapshot it, so it never changes.
+  string key = 2;
+  string name = 3;
+  string description = 4;
+  // Usually a single emoji; may be a URL.
+  string icon = 5;
+  int32 price_points = 6;
+  int32 sort_order = 7;
+  bool is_enabled = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+  // Empty until an admin has edited the entry.
+  string updated_by_user_id = 11;
+}
+
+message ListGiftsRequest {}
+
+message ListGiftsResponse {
+  // Enabled entries only, in display order.
+  repeated Gift gifts = 1;
+  // The caller's balance, so a send panel can grey out what they cannot afford.
+  int64 balance = 2;
+}
+
+message SendGiftRequest {
+  string recipient_user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+  string gift_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^gift_[A-Za-z0-9]+$"
+  }];
+  int32 quantity = 3 [(buf.validate.field).int32 = {gte: 1, lte: 99}];
+  // Optional note shown with the gift.
+  string message = 4 [(buf.validate.field).string = {max_len: 200}];
+  // Set to announce the send in that room's chat; the recipient must be a
+  // member. Empty sends from a profile page, with no announcement.
+  string room_id = 5 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(room_[A-Za-z0-9]+)?$"
+  }];
+  // Retry key. Repeating one returns the earlier send instead of charging again.
+  string request_id = 6 [(buf.validate.field).string = {max_len: 64}];
+}
+
+// One completed send. The catalog fields are the snapshot taken at send time, so
+// a later rename or repricing does not rewrite history.
+message GiftRecord {
+  string id = 1;
+  string sender_user_id = 2;
+  string sender_username = 3;
+  // Empty when the recipient account has since been deleted.
+  string recipient_user_id = 4;
+  string recipient_username = 5;
+  // Empty for a send that did not happen in a room.
+  string room_id = 6;
+  string gift_key = 7;
+  string gift_name = 8;
+  string gift_icon = 9;
+  int32 unit_price_points = 10;
+  int32 quantity = 11;
+  int64 total_points = 12;
+  string message = 13;
+  int64 created_at = 14;
+}
+
+message SendGiftResponse {
+  GiftRecord record = 1;
+  // The sender's balance after the debit.
+  int64 balance = 2;
+  // True when this request_id had already been sent. The response then describes
+  // that earlier send and charges nothing, so a retry is not a failure.
+  bool already_sent = 3;
+}
+
+enum GiftRecordDirection {
+  GIFT_RECORD_DIRECTION_UNSPECIFIED = 0;
+  GIFT_RECORD_DIRECTION_SENT = 1;
+  GIFT_RECORD_DIRECTION_RECEIVED = 2;
+}
+
+message ListGiftRecordsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_gift_records.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_gift_records.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  // Unspecified reads what the caller has sent.
+  GiftRecordDirection direction = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// People search: the only way in the app to reach an account you do not
+// already follow. Matches usernames only — an email would let a search confirm
+// an address someone never published.
+message SearchUsersRequest {
+  option (buf.validate.message).cel = {
+    id: "search_users.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "search_users.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 50"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 50)"
+  };
+
+  string query = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message UserSearchResult {
+  UserPublicView user = 1;
+  // Where the caller already stands with this account, so the row can offer the
+  // one action that is left rather than a request that will be rejected.
+  bool is_friend = 2;
+  bool request_sent = 3;
+  bool request_received = 4;
+  bool is_following = 5;
+}
+
+message SearchUsersResponse {
+  repeated UserSearchResult results = 1;
+  int32 total = 2;
+}
+
+message GetPrivacySettingsRequest {}
+
+message PrivacySettings {
+  // Off hides the account from SearchUsers. It does not hide the profile from
+  // someone who already has the link.
+  bool discoverable = 1;
+  // Whether anyone but the owner may open the following / followers lists.
+  bool show_following = 2;
+  bool show_followers = 3;
+}
+
+// Unset fields are left as they are, so a client can flip one switch without
+// having to send the other two back.
+message UpdatePrivacySettingsRequest {
+  optional bool discoverable = 1;
+  optional bool show_following = 2;
+  optional bool show_followers = 3;
+}
+
+// A profile's gifts, grouped by kind. Senders are aggregated away here rather
+// than filtered in the client: the response has no field to put one in, so no
+// caller can learn who paid for what.
+message ListUserGiftShowcaseRequest {
+  // Omit to read the caller's own showcase.
+  string user_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+  // 0 uses the server default. Caps at the number of distinct gifts shown.
+  int32 limit = 2 [(buf.validate.field).int32 = {gte: 0, lte: 100}];
+}
+
+message UserGiftShowcaseEntry {
+  string gift_key = 1;
+  string gift_name = 2;
+  string gift_icon = 3;
+  int64 quantity = 4;
+  int64 total_points = 5;
+  int64 last_received_at = 6;
+}
+
+message ListUserGiftShowcaseResponse {
+  repeated UserGiftShowcaseEntry entries = 1;
+  // Totals over every gift received, not just the entries returned.
+  int64 total_quantity = 2;
+  int64 total_points = 3;
+}
+
+message ListGiftRecordsResponse {
+  repeated GiftRecord records = 1;
+  int32 total = 2;
+}
+
+message ListRoomGiftsRequest {
+  string room_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^room_[A-Za-z0-9]+$"
+  }];
+  // 0 uses the server default; capped at 50.
+  int32 limit = 2 [(buf.validate.field).int32 = {gte: 0, lte: 50}];
+}
+
+message ListRoomGiftsResponse {
+  // Newest first.
+  repeated GiftRecord records = 1;
+}
+
+message GetGiftStatsRequest {
+  // Omit to read the caller's own counters.
+  string user_id = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(usr_[A-Za-z0-9]+)?$"
+  }];
+}
+
+message GetGiftStatsResponse {
+  int64 sent_count = 1;
+  int64 sent_points = 2;
+  int64 received_count = 3;
+  int64 received_points = 4;
+}
+
+// ==================== 情侣空间 (couple space) ====================
+
+enum CoupleSpaceStatus {
+  COUPLE_SPACE_STATUS_UNSPECIFIED = 0;
+  // Invited, not yet accepted. Nothing is shared yet.
+  COUPLE_SPACE_STATUS_PENDING = 1;
+  COUPLE_SPACE_STATUS_ACTIVE = 2;
+  // Unbound by either side. Kept readable, but no longer writable.
+  COUPLE_SPACE_STATUS_ENDED = 3;
+}
+
+message CoupleSpace {
+  string id = 1;
+  string initiator_user_id = 2;
+  string partner_user_id = 3;
+  CoupleSpaceStatus status = 4;
+  string title = 5;
+  string invite_message = 6;
+  // YYYY-MM-DD the "在一起 N 天" counter starts from; empty until bound.
+  string anniversary_date = 7;
+  int64 created_at = 8;
+  // Zero until bound, and until ended, respectively.
+  int64 bound_at = 9;
+  int64 ended_at = 10;
+}
+
+message CoupleSpaceView {
+  CoupleSpace space = 1;
+  // The other account, whichever column it sits in.
+  UserPublicView partner = 2;
+  // True when the reader sent the invite: the pending screen differs, since the
+  // initiator can only withdraw while the partner can accept or decline.
+  bool viewer_is_initiator = 3;
+  // Whole days from the anniversary to today, inclusive. Zero until bound.
+  int64 days_together = 4;
+  int64 favorite_count = 5;
+  // How many titles both members have in their watch history.
+  int64 shared_watch_count = 6;
+}
+
+message GetCoupleSpaceRequest {}
+
+message GetCoupleSpaceResponse {
+  // Absent when the account has neither an active space nor a pending invite,
+  // which is the card's empty state.
+  CoupleSpaceView space = 1;
+}
+// Invites an account to bind. If they have already invited the caller, that
+// invite is accepted instead: two people inviting each other is agreement.
+message InviteCouplePartnerRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+  string title = 2 [(buf.validate.field).string = {max_len: 100}];
+  string invite_message = 3 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message InviteCouplePartnerResponse {
+  CoupleSpaceView space = 1;
+}
+
+message AcceptCoupleInviteRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // YYYY-MM-DD. Omit to count from today.
+  string anniversary_date = 2 [(buf.validate.field).string = {
+    max_len: 10
+    pattern: "^(\\d{4}-\\d{2}-\\d{2})?$"
+  }];
+}
+
+message AcceptCoupleInviteResponse {
+  CoupleSpaceView space = 1;
+}
+
+// Declining an invite the caller received, or withdrawing one they sent.
+message DismissCoupleInviteRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message DismissCoupleInviteResponse {
+  bool success = 1;
+}
+// Unbinds an active space, freeing both accounts to bind again. The space and
+// its shared list stay readable; what goes is the membership.
+message UnbindCoupleSpaceRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message UnbindCoupleSpaceResponse {
+  bool success = 1;
+}
+
+message UpdateCoupleSpaceRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // Omitted fields are left as they are.
+  optional string title = 2 [(buf.validate.field).string = {max_len: 100}];
+  optional string anniversary_date = 3 [(buf.validate.field).string = {
+    len: 10
+    pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+  }];
+}
+
+message UpdateCoupleSpaceResponse {
+  CoupleSpaceView space = 1;
+}
+
+// One entry on the shared list. Either member may add or remove.
+message CoupleFavorite {
+  string id = 1;
+  // Empty once the account that added it has been deleted.
+  string added_by_user_id = 2;
+  string room_id = 3;
+  string media_id = 4;
+  string title = 5;
+  string cover_url = 6;
+  string source_key = 7;
+  string note = 8;
+  int64 created_at = 9;
+}
+message AddCoupleFavoriteRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string room_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(room_[A-Za-z0-9]+)?$"
+  }];
+  string media_id = 3 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(med_[A-Za-z0-9]+)?$"
+  }];
+  string title = 4 [(buf.validate.field).string = {max_len: 300}];
+  string cover_url = 5 [(buf.validate.field).string = {max_len: 500}];
+  string source_key = 6 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string note = 7 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message AddCoupleFavoriteResponse {
+  CoupleFavorite favorite = 1;
+}
+
+message RemoveCoupleFavoriteRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string source_key = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+message RemoveCoupleFavoriteResponse {
+  bool success = 1;
+}
+message ListCoupleFavoritesRequest {
+  option (buf.validate.message).cel = {
+    id: "list_couple_favorites.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_couple_favorites.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListCoupleFavoritesResponse {
+  repeated CoupleFavorite favorites = 1;
+  int32 total = 2;
+}
+
+// 共同观影记录: a title both members have watched.
+message SharedWatchEntry {
+  string source_key = 1;
+  string title = 2;
+  string cover_url = 3;
+  string room_id = 4;
+  string media_id = 5;
+  int64 viewer_watched_at = 6;
+  int64 partner_watched_at = 7;
+}
+message ListCoupleSharedWatchEntriesRequest {
+  option (buf.validate.message).cel = {
+    id: "list_couple_shared_watch_entries.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_couple_shared_watch_entries.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListCoupleSharedWatchEntriesResponse {
+  repeated SharedWatchEntry entries = 1;
+  int32 total = 2;
+}
+
+// ==================== Friends ====================
+
+enum FriendRequestStatus {
+  FRIEND_REQUEST_STATUS_UNSPECIFIED = 0;
+  FRIEND_REQUEST_STATUS_PENDING = 1;
+  FRIEND_REQUEST_STATUS_ACCEPTED = 2;
+  FRIEND_REQUEST_STATUS_DECLINED = 3;
+  // Withdrawn by the requester before the other side answered.
+  FRIEND_REQUEST_STATUS_CANCELLED = 4;
+}
+
+enum FriendRequestDirection {
+  FRIEND_REQUEST_DIRECTION_UNSPECIFIED = 0;
+  // Someone asked the reader.
+  FRIEND_REQUEST_DIRECTION_INCOMING = 1;
+  // The reader asked someone.
+  FRIEND_REQUEST_DIRECTION_OUTGOING = 2;
+}
+message FriendRequest {
+  string id = 1;
+  // The other account, from the reader's point of view.
+  UserPublicView counterpart = 2;
+  FriendRequestDirection direction = 3;
+  string message = 4;
+  FriendRequestStatus status = 5;
+  int64 created_at = 6;
+  // Zero while still pending.
+  int64 responded_at = 7;
+}
+
+message Friend {
+  UserPublicView user = 1;
+  int64 friended_at = 2;
+}
+
+message SendFriendRequestRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+  string message = 2 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message SendFriendRequestResponse {
+  // True when the other side had already asked: two people asking each other is
+  // mutual consent, so the request is settled at once instead of waiting in an
+  // inbox that would confuse both.
+  bool accepted = 1;
+  // Set while pending.
+  string request_id = 2;
+  // Set when accepted, along with the direct thread the two now share.
+  Friend friend = 3;
+  string conversation_id = 4;
+}
+
+message AcceptFriendRequestRequest {
+  string request_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^frq_[A-Za-z0-9]+$"
+  }];
+}
+
+message AcceptFriendRequestResponse {
+  Friend friend = 1;
+  string conversation_id = 2;
+}
+message DeclineFriendRequestRequest {
+  string request_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^frq_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeclineFriendRequestResponse {
+  bool success = 1;
+}
+
+// Withdraws a request the caller sent.
+message CancelFriendRequestRequest {
+  string request_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^frq_[A-Za-z0-9]+$"
+  }];
+}
+
+message CancelFriendRequestResponse {
+  bool success = 1;
+}
+
+message ListFriendRequestsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_friend_requests.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_friend_requests.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  // Defaults to incoming, which is the inbox the badge counts.
+  FriendRequestDirection direction = 1 [(buf.validate.field).enum.defined_only = true];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListFriendRequestsResponse {
+  repeated FriendRequest requests = 1;
+  int32 total = 2;
+}
+message ListFriendsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_friends.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_friends.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  int32 page = 1;
+  int32 page_size = 2;
+  string search = 3 [(buf.validate.field).string = {max_len: 100}];
+}
+
+message ListFriendsResponse {
+  repeated Friend friends = 1;
+  int32 total = 2;
+}
+
+// Drops the friendship from both sides. The direct thread survives, unwritable
+// while the two are not friends.
+message RemoveFriendRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+}
+
+message RemoveFriendResponse {
+  bool success = 1;
+}
+
+// The badge numbers for the 消息 tab.
+message GetSocialUnreadSummaryRequest {}
+
+message GetSocialUnreadSummaryResponse {
+  int64 unread_message_count = 1;
+  // Threads with at least one unread message, for a "N 个会话" line.
+  int64 unread_conversation_count = 2;
+  int64 pending_friend_request_count = 3;
+}
+// ==================== Conversations (direct threads and groups) ====================
+
+enum ConversationKind {
+  CONVERSATION_KIND_UNSPECIFIED = 0;
+  // Exactly two members, created on demand between friends.
+  CONVERSATION_KIND_DIRECT = 1;
+  // Owner plus invited members, with a title.
+  CONVERSATION_KIND_GROUP = 2;
+}
+
+enum ConversationMemberRole {
+  CONVERSATION_MEMBER_ROLE_UNSPECIFIED = 0;
+  CONVERSATION_MEMBER_ROLE_MEMBER = 1;
+  // May add and remove members; may not delete the group.
+  CONVERSATION_MEMBER_ROLE_ADMIN = 2;
+  CONVERSATION_MEMBER_ROLE_OWNER = 3;
+}
+
+enum SocialMessageKind {
+  SOCIAL_MESSAGE_KIND_UNSPECIFIED = 0;
+  SOCIAL_MESSAGE_KIND_TEXT = 1;
+  SOCIAL_MESSAGE_KIND_SYSTEM = 2;
+}
+
+message SocialMessage {
+  string id = 1;
+  string conversation_id = 2;
+  // Absent for system lines, and for text whose author has been deleted.
+  UserPublicView sender = 3;
+  SocialMessageKind kind = 4;
+  // Empty when deleted is true: a removed message keeps its place in the id
+  // sequence because every member's read cursor is an id in it.
+  string body = 5;
+  int64 created_at = 6;
+  bool deleted = 7;
+}
+
+message ConversationMember {
+  UserPublicView user = 1;
+  ConversationMemberRole role = 2;
+  int64 joined_at = 3;
+}
+message ConversationSummary {
+  string id = 1;
+  ConversationKind kind = 2;
+  // Empty for direct threads, which render as counterpart.
+  string title = 3;
+  string owner_user_id = 4;
+  // The other participant of a direct thread; absent for a group.
+  UserPublicView counterpart = 5;
+  int64 member_count = 6;
+  ConversationMemberRole viewer_role = 7;
+  bool muted = 8;
+  int64 unread_count = 9;
+  SocialMessage last_message = 10;
+  int64 created_at = 11;
+  int64 updated_at = 12;
+}
+
+// Opens the direct thread with a friend, creating it on first use.
+message OpenDirectConversationRequest {
+  string user_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+}
+
+message OpenDirectConversationResponse {
+  ConversationSummary conversation = 1;
+}
+
+message CreateGroupConversationRequest {
+  string title = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  // Accounts invited at creation, excluding the creator. Non-friends are
+  // rejected, so a group starts from people the creator already knows.
+  repeated string member_user_ids = 2 [(buf.validate.field).repeated = {
+    max_items: 199
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+        pattern: "^usr_[A-Za-z0-9]+$"
+      }
+    }
+  }];
+}
+message CreateGroupConversationResponse {
+  ConversationSummary conversation = 1;
+}
+
+message ListConversationsRequest {
+  option (buf.validate.message).cel = {
+    id: "list_conversations.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_conversations.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListConversationsResponse {
+  repeated ConversationSummary conversations = 1;
+  int32 total = 2;
+}
+
+message GetConversationRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+}
+
+message GetConversationResponse {
+  ConversationSummary conversation = 1;
+}
+
+// A page of the thread, newest first. Pass before_message_id to walk backwards.
+message ListConversationMessagesRequest {
+  option (buf.validate.message).cel = {
+    id: "list_conversation_messages.limit"
+    message: "limit must be 0 (use default) or between 1 and 100"
+    expression: "this.limit == 0 || (this.limit >= 1 && this.limit <= 100)"
+  };
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string before_message_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(smsg_[A-Za-z0-9]+)?$"
+  }];
+  int32 limit = 3;
+}
+message ListConversationMessagesResponse {
+  repeated SocialMessage messages = 1;
+}
+
+message SendConversationMessageRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string body = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4000
+  }];
+}
+
+message SendConversationMessageResponse {
+  SocialMessage message = 1;
+}
+
+// Removes one of the caller's own messages. The row stays, emptied.
+message DeleteConversationMessageRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string message_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^smsg_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteConversationMessageResponse {
+  bool success = 1;
+}
+
+// Advances the caller's read cursor. Omit up_to_message_id to read it all.
+message MarkConversationReadRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string up_to_message_id = 2 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^(smsg_[A-Za-z0-9]+)?$"
+  }];
+}
+message MarkConversationReadResponse {
+  // Where the cursor now stands; empty when the thread has no messages yet.
+  string last_read_message_id = 1;
+}
+
+// Silences a thread for the caller alone.
+message SetConversationMutedRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  bool muted = 2;
+}
+
+message SetConversationMutedResponse {
+  bool success = 1;
+}
+
+message ListConversationMembersRequest {
+  option (buf.validate.message).cel = {
+    id: "list_conversation_members.page"
+    message: "page must be 0 (use default) or at least 1"
+    expression: "this.page == 0 || this.page >= 1"
+  };
+  option (buf.validate.message).cel = {
+    id: "list_conversation_members.page_size"
+    message: "page_size must be 0 (use default) or between 1 and 100"
+    expression: "this.page_size == 0 || (this.page_size >= 1 && this.page_size <= 100)"
+  };
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListConversationMembersResponse {
+  repeated ConversationMember members = 1;
+  int32 total = 2;
+}
+// Group only, and only for the owner or an admin. Accounts already in the group
+// are skipped rather than refused, so a retry is harmless.
+message AddConversationMembersRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  repeated string user_ids = 2 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 100
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+        pattern: "^usr_[A-Za-z0-9]+$"
+      }
+    }
+  }];
+}
+
+message AddConversationMembersResponse {
+  int64 added_count = 1;
+}
+
+message RemoveConversationMemberRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string user_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^usr_[A-Za-z0-9]+$"
+  }];
+}
+
+message RemoveConversationMemberResponse {
+  bool success = 1;
+}
+// Groups only. The owner must delete the group instead.
+message LeaveConversationRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+}
+
+message LeaveConversationResponse {
+  bool success = 1;
+}
+
+message SetConversationTitleRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+  string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+message SetConversationTitleResponse {
+  bool success = 1;
+}
+
+// Owner only, and groups only: a direct thread belongs to both accounts.
+message DeleteConversationRequest {
+  string conversation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^conv_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteConversationResponse {
+  bool success = 1;
+}
+
 enum PlayMode {
   PLAY_MODE_UNSPECIFIED = 0;
   PLAY_MODE_SEQUENTIAL = 1;
@@ -584,11 +2032,26 @@ message ChatPlaybackChangedMetadata {
   string actor_user_id = 4;
 }
 
+message ChatGiftMetadata {
+  string record_id = 1;
+  string sender_user_id = 2;
+  string sender_username = 3;
+  string recipient_user_id = 4;
+  string recipient_username = 5;
+  string gift_key = 6;
+  string gift_name = 7;
+  string gift_icon = 8;
+  int32 quantity = 9;
+  int64 total_points = 10;
+  string message = 11;
+}
+
 message ChatMetadata {
   oneof metadata {
     ChatUserMetadata user = 1;
     ChatMemberJoinedMetadata member_joined = 2;
     ChatPlaybackChangedMetadata playback_changed = 3;
+    ChatGiftMetadata gift = 4;
   }
 }
 
@@ -3725,6 +5188,7 @@ enum ChatMessageType {
   CHAT_MESSAGE_TYPE_USER = 1;
   CHAT_MESSAGE_TYPE_SYSTEM_MEMBER_JOINED = 1001;
   CHAT_MESSAGE_TYPE_SYSTEM_PLAYBACK_CHANGED = 1002;
+  CHAT_MESSAGE_TYPE_SYSTEM_GIFT = 1003;
 }
 
 enum ChatMessageEventKind {
@@ -3773,6 +5237,7 @@ enum FileObjectAccessKind {
   FILE_OBJECT_ACCESS_KIND_PLAYLIST_COVER = 5;
   FILE_OBJECT_ACCESS_KIND_GENERIC = 6;
   FILE_OBJECT_ACCESS_KIND_MEDIA_THUMBNAIL = 7;
+  FILE_OBJECT_ACCESS_KIND_USER_PROFILE_BACKGROUND = 8;
 }
 
 message FileObjectAccess {
@@ -4080,6 +5545,112 @@ message UpdateUserAvatarRequest {
 }
 
 message ClearUserAvatarRequest {}
+
+// Profile page background objects.
+//
+// The same upload transport as the avatar, on messages and routes of its own
+// because the files are larger and may be animated: sharing the avatar's routes
+// would put a GIF backdrop under the avatar's body limit and MIME list.
+message CreateUserProfileBackgroundUploadSessionRequest {
+  string client_background_id = 1;
+  string mime_type = 2;
+  int64 size_bytes = 3;
+  int32 width = 4;
+  int32 height = 5;
+  repeated FileUploadManifestPart parts = 6;
+  FileMetadata metadata = 7;
+}
+
+message UserProfileBackgroundUploadSession {
+  FileUploadReference background_reference = 1;
+  bool upload_required = 2;
+  optional string upload_url = 3;
+  optional string upload_method = 4;
+  map<string, string> upload_headers = 5;
+  optional int64 expires_at = 6;
+  int64 max_size_bytes = 7;
+  bool ownership_proof_required = 8;
+  optional string ownership_proof_nonce = 9;
+  repeated UserProfileBackgroundOwnershipProofRange ownership_proof_ranges = 10;
+  bool resumable = 12;
+  int64 part_size_bytes = 13;
+  int64 uploaded_size_bytes = 14;
+  repeated int32 uploaded_parts = 15;
+  optional string upload_id = 16;
+  repeated FileUploadPartUrl part_urls = 17;
+  string upload_token = 18;
+  string encoded_object_key = 19;
+  FileObjectAccess upload_object_access = 20;
+}
+
+message UserProfileBackgroundOwnershipProofRange {
+  int64 offset = 1;
+  int32 length = 2;
+}
+
+message CreateUserProfileBackgroundUploadSessionResponse {
+  oneof result {
+    FileUploadPlan plan = 1;
+    UserProfileBackgroundUploadSession session = 2;
+  }
+}
+
+message UploadUserProfileBackgroundObjectRequest {
+  string encoded_object_key = 1;
+  string token = 2;
+  optional string content_type = 3;
+  bytes data = 4;
+  optional FileUploadRange content_range = 5;
+}
+
+message GetUserProfileBackgroundObjectRequest {
+  string encoded_object_key = 1;
+  string token = 2;
+  optional FileRangeRequest range = 3;
+}
+
+message UserProfileBackgroundObjectResponse {
+  string mime_type = 1;
+  string content_manifest_sha256 = 2;
+  bytes data = 3;
+  optional FileByteRange content_range = 4;
+  int64 total_size_bytes = 5;
+}
+
+message UploadUserProfileBackgroundObjectResponse {
+  UserProfileBackgroundObjectResponse object = 1;
+  bool complete = 2;
+  int64 uploaded_size_bytes = 3;
+  repeated int32 uploaded_parts = 4;
+}
+
+message CompleteUserProfileBackgroundUploadSessionRequest {
+  string encoded_object_key = 1;
+  string token = 2;
+  optional string upload_id = 3;
+  repeated CompleteFileUploadPart parts = 4;
+  string file_id = 5;
+  string ownership_proof = 6;
+}
+
+message CompleteUserProfileBackgroundUploadSessionResponse {
+  UserProfileBackgroundObjectResponse object = 1;
+  bool complete = 2;
+  int64 uploaded_size_bytes = 3;
+  repeated int32 uploaded_parts = 4;
+}
+
+message UpdateUserProfileBackgroundRequest {
+  FileUploadReference background_reference = 1;
+}
+
+message ClearUserProfileBackgroundRequest {}
+
+message UpdateUserProfileBackgroundResponse {
+  // Empty once the background has been cleared.
+  string background_url = 1;
+  FileObjectAccess background_access = 2;
+}
 
 message FileCover {
   string id = 1;
@@ -5568,3 +7139,669 @@ message DeleteNotificationResponse {}
 message DeleteAllReadRequest {}
 
 message DeleteAllReadResponse {}
+
+// ==================== 影视 Subscription Sources ====================
+
+// How to read a source endpoint. Closed set: the client has one adapter per
+// value, and a source it cannot parse is a source nothing can play.
+enum VodSourceFormat {
+  VOD_SOURCE_FORMAT_UNSPECIFIED = 0;
+  // MacCMS / CMS10 JSON.
+  VOD_SOURCE_FORMAT_MACCMS_JSON = 1;
+  // The same API rendered as XML.
+  VOD_SOURCE_FORMAT_MACCMS_XML = 2;
+  // A flat M3U playlist where `group-title` carries the category.
+  VOD_SOURCE_FORMAT_M3U = 3;
+}
+
+message VodSource {
+  string id = 1;
+  string name = 2;
+  VodSourceFormat format = 3;
+  string endpoint = 4;
+  // Sent with every catalog request. A browser build drops these — it cannot
+  // set `User-Agent` or `Referer` — so a source needing them is native-only.
+  map<string, string> headers = 5;
+  int32 sort_order = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message ListVodSourcesRequest {}
+
+message ListVodSourcesResponse {
+  // Enabled entries only, in the order the administrator set.
+  repeated VodSource sources = 1;
+}
+
+// ==================== 爱的小窝 ====================
+
+enum CoupleMediaKind {
+  COUPLE_MEDIA_KIND_UNSPECIFIED = 0;
+  COUPLE_MEDIA_KIND_PHOTO = 1;
+  COUPLE_MEDIA_KIND_VIDEO = 2;
+}
+
+enum CoupleAiKind {
+  COUPLE_AI_KIND_UNSPECIFIED = 0;
+  COUPLE_AI_KIND_DATE_PLAN = 1;
+  COUPLE_AI_KIND_DIARY = 2;
+  COUPLE_AI_KIND_LOVE_LETTER = 3;
+}
+
+enum CouplePetAction {
+  COUPLE_PET_ACTION_UNSPECIFIED = 0;
+  COUPLE_PET_ACTION_FEED = 1;
+  COUPLE_PET_ACTION_PLAY = 2;
+  COUPLE_PET_ACTION_PET = 3;
+}
+
+// One photo or video in the nest. `objectKey` identifies the blob in file
+// storage; the client resolves it to a URL the same way it does an avatar.
+message CoupleMedia {
+  string id = 1;
+  string album_id = 2;
+  string memory_id = 3;
+  string uploader_user_id = 4;
+  CoupleMediaKind kind = 5;
+  string storage_backend = 6;
+  string object_key = 7;
+  string mime_type = 8;
+  int64 size_bytes = 9;
+  int32 width = 10;
+  int32 height = 11;
+  // `YYYY-MM-DD`, empty when the capture date is unknown.
+  string taken_on = 12;
+  string caption = 13;
+  int64 created_at = 14;
+  // Where the bytes are, on this server. A path rather than a signed URL: the
+  // route authenticates the caller and checks space membership, so nothing
+  // private ends up in a link that can be forwarded, logged or refererred.
+  string url = 15;
+}
+
+// 时光轴 entry. `happenedOn` is the day being remembered, not the day it was
+// written — the timeline orders by the former.
+message CoupleMemory {
+  string id = 1;
+  string author_user_id = 2;
+  string happened_on = 3;
+  string title = 4;
+  string content = 5;
+  string location = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+  repeated CoupleMedia media = 9;
+}
+
+message CoupleAlbum {
+  string id = 1;
+  string created_by_user_id = 2;
+  string name = 3;
+  int64 created_at = 4;
+  int32 media_count = 5;
+  // Newest item, for the shelf tile. Absent while the album is empty.
+  CoupleMedia cover = 6;
+}
+
+message CoupleAnniversary {
+  string id = 1;
+  string created_by_user_id = 2;
+  string title = 3;
+  string happens_on = 4;
+  bool repeat_yearly = 5;
+  string note = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+  // The next time it comes round, already resolved through the repeat rule.
+  string next_occurrence_on = 9;
+  // Negative once a one-off has passed.
+  int32 days_until = 10;
+}
+
+message CoupleTodo {
+  string id = 1;
+  string created_by_user_id = 2;
+  string title = 3;
+  string note = 4;
+  string category = 5;
+  int32 priority = 6;
+  string plan_date = 7;
+  string done_by_user_id = 8;
+  int64 done_at = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+// The pet as it is now. Hunger and mood are decayed to the moment of reading,
+// so a pet left alone is already hungry when the screen opens.
+message CouplePet {
+  string name = 1;
+  int32 species = 2;
+  int32 skin = 3;
+  int32 accessory = 4;
+  int32 stage = 5;
+  int32 experience = 6;
+  int32 hunger = 7;
+  int32 mood = 8;
+  int32 streak_days = 9;
+  bool both_checked_in_today = 10;
+  int32 experience_into_stage = 11;
+  int32 experience_for_next_stage = 12;
+  int64 created_at = 13;
+}
+
+message CouplePetDay {
+  string on_date = 1;
+  // How many of the two members were in that day.
+  int32 members = 2;
+  int32 interactions = 3;
+}
+
+message CoupleAiWork {
+  string id = 1;
+  string author_user_id = 2;
+  CoupleAiKind kind = 3;
+  string title = 4;
+  // What was asked, as JSON, so a piece can be explained or regenerated.
+  string prompt_json = 5;
+  string content = 6;
+  int64 created_at = 7;
+}
+
+message GetCoupleNestHomeRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message GetCoupleNestHomeResponse {
+  CoupleMedia cover = 1;
+  CoupleAnniversary next_anniversary = 2;
+  repeated CoupleMedia recent_media = 3;
+  repeated CoupleTodo open_todos = 4;
+  int32 open_todo_count = 5;
+  int32 done_todo_count = 6;
+  int32 memory_count = 7;
+  int32 media_count = 8;
+  CouplePet pet = 9;
+}
+
+message ListCoupleMemoriesRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListCoupleMemoriesResponse {
+  repeated CoupleMemory memories = 1;
+  int32 total = 2;
+}
+
+message CreateCoupleMemoryRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // `YYYY-MM-DD`.
+  string happened_on = 2 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 10
+  }];
+  string title = 3 [(buf.validate.field).string = {max_len: 120}];
+  string content = 4 [(buf.validate.field).string = {max_len: 8000}];
+  string location = 5 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message CreateCoupleMemoryResponse {
+  CoupleMemory memory = 1;
+}
+
+message UpdateCoupleMemoryRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cmem_[A-Za-z0-9]+$"
+  }];
+  optional string happened_on = 2 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 10
+  }];
+  optional string title = 3 [(buf.validate.field).string = {max_len: 120}];
+  optional string content = 4 [(buf.validate.field).string = {max_len: 8000}];
+  optional string location = 5 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message UpdateCoupleMemoryResponse {
+  CoupleMemory memory = 1;
+}
+
+message DeleteCoupleMemoryRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cmem_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleMemoryResponse {}
+
+message ListCoupleAlbumsRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message ListCoupleAlbumsResponse {
+  repeated CoupleAlbum albums = 1;
+  // Media filed in no album, so the shelf can offer them somewhere.
+  int32 unfiled_count = 2;
+}
+
+message CreateCoupleAlbumRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 80
+  }];
+}
+
+message CreateCoupleAlbumResponse {
+  CoupleAlbum album = 1;
+}
+
+message RenameCoupleAlbumRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^calb_[A-Za-z0-9]+$"
+  }];
+  string name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 80
+  }];
+}
+
+message RenameCoupleAlbumResponse {}
+
+// The photos in it survive as unfiled: the pictures are the point, the folder
+// is not.
+message DeleteCoupleAlbumRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^calb_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleAlbumResponse {}
+
+message ListCoupleMediaRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // Exactly one of these narrows the listing; none means everything.
+  optional string album_id = 2;
+  optional string memory_id = 3;
+  bool unfiled_only = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListCoupleMediaResponse {
+  repeated CoupleMedia media = 1;
+  int32 total = 2;
+}
+
+// Files an object that has already been uploaded through the file-storage
+// endpoints, exactly as an avatar or a chat attachment is.
+message AddCoupleMediaRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  optional string album_id = 2;
+  optional string memory_id = 3;
+  CoupleMediaKind kind = 4 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  string storage_backend = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  string object_key = 6 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 512
+  }];
+  string mime_type = 7 [(buf.validate.field).string = {max_len: 128}];
+  int64 size_bytes = 8;
+  int32 width = 9;
+  int32 height = 10;
+  string taken_on = 11;
+  string caption = 12 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message AddCoupleMediaResponse {
+  CoupleMedia media = 1;
+}
+
+message MoveCoupleMediaRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cmed_[A-Za-z0-9]+$"
+  }];
+  // Absent unfiles it.
+  optional string album_id = 2;
+}
+
+message MoveCoupleMediaResponse {}
+
+message DeleteCoupleMediaRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cmed_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleMediaResponse {}
+
+message SetCoupleSpaceCoverRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // Absent clears the cover.
+  optional string media_id = 2;
+}
+
+message SetCoupleSpaceCoverResponse {}
+
+message ListCoupleAnniversariesRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message ListCoupleAnniversariesResponse {
+  // Soonest upcoming first.
+  repeated CoupleAnniversary anniversaries = 1;
+}
+
+message CreateCoupleAnniversaryRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 80
+  }];
+  string happens_on = 3 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 10
+  }];
+  bool repeat_yearly = 4;
+  string note = 5 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message CreateCoupleAnniversaryResponse {
+  CoupleAnniversary anniversary = 1;
+}
+
+message UpdateCoupleAnniversaryRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cann_[A-Za-z0-9]+$"
+  }];
+  optional string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 80
+  }];
+  optional string happens_on = 3 [(buf.validate.field).string = {
+    min_len: 10
+    max_len: 10
+  }];
+  optional bool repeat_yearly = 4;
+  optional string note = 5 [(buf.validate.field).string = {max_len: 200}];
+}
+
+message UpdateCoupleAnniversaryResponse {
+  CoupleAnniversary anniversary = 1;
+}
+
+message DeleteCoupleAnniversaryRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cann_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleAnniversaryResponse {}
+
+message ListCoupleTodosRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message ListCoupleTodosResponse {
+  // Outstanding first, then by priority and planned date.
+  repeated CoupleTodo todos = 1;
+}
+
+message CreateCoupleTodoRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 120
+  }];
+  string note = 3 [(buf.validate.field).string = {max_len: 300}];
+  string category = 4 [(buf.validate.field).string = {max_len: 40}];
+  int32 priority = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 2
+  }];
+  string plan_date = 6;
+}
+
+message CreateCoupleTodoResponse {
+  CoupleTodo todo = 1;
+}
+
+message UpdateCoupleTodoRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^ctodo_[A-Za-z0-9]+$"
+  }];
+  optional string title = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 120
+  }];
+  optional string note = 3 [(buf.validate.field).string = {max_len: 300}];
+  optional string category = 4 [(buf.validate.field).string = {max_len: 40}];
+  optional int32 priority = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 2
+  }];
+  // A map of one: absent leaves the date, empty clears it.
+  optional string plan_date = 6;
+  bool clear_plan_date = 7;
+  // Ticks it in the caller's name, or clears the tick and who made it.
+  optional bool done = 8;
+}
+
+message UpdateCoupleTodoResponse {
+  CoupleTodo todo = 1;
+}
+
+message DeleteCoupleTodoRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^ctodo_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleTodoResponse {}
+
+message GetCouplePetRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message GetCouplePetResponse {
+  // Absent until the pair adopts one.
+  CouplePet pet = 1;
+}
+
+message AdoptCouplePetRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  string name = 2 [(buf.validate.field).string = {max_len: 40}];
+  // 1 cat, 2 dog, 3 fox, 4 rabbit.
+  int32 species = 3 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 4
+  }];
+}
+
+message AdoptCouplePetResponse {
+  CouplePet pet = 1;
+}
+
+message InteractWithCouplePetRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  CouplePetAction action = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+message InteractWithCouplePetResponse {
+  CouplePet pet = 1;
+}
+
+message UpdateCouplePetRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  optional string name = 2 [(buf.validate.field).string = {max_len: 40}];
+  optional int32 species = 3 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 4
+  }];
+  optional int32 skin = 4;
+  optional int32 accessory = 5;
+}
+
+message UpdateCouplePetResponse {
+  CouplePet pet = 1;
+}
+
+message GetCouplePetHistoryRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+}
+
+message GetCouplePetHistoryResponse {
+  // Newest day first, one entry per day either member was in.
+  repeated CouplePetDay days = 1;
+}
+
+message ListCoupleAiWorksRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  // Unspecified returns every kind.
+  CoupleAiKind kind = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListCoupleAiWorksResponse {
+  repeated CoupleAiWork works = 1;
+  int32 total = 2;
+}
+
+// Stores a finished piece. Generation happens on the client or through the
+// server's model proxy; a piece typed by hand is just as valid a thing to keep.
+message SaveCoupleAiWorkRequest {
+  string space_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cpl_[A-Za-z0-9]+$"
+  }];
+  CoupleAiKind kind = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  string title = 3 [(buf.validate.field).string = {max_len: 120}];
+  string prompt_json = 4 [(buf.validate.field).string = {max_len: 4000}];
+  string content = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 20000
+  }];
+}
+
+message SaveCoupleAiWorkResponse {
+  CoupleAiWork work = 1;
+}
+
+message DeleteCoupleAiWorkRequest {
+  string id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+    pattern: "^cai_[A-Za-z0-9]+$"
+  }];
+}
+
+message DeleteCoupleAiWorkResponse {}
