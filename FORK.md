@@ -4,8 +4,8 @@ Syncly's server is a fork of [synctv-org/synctv](https://github.com/synctv-org/s
 MIT, kept under its original licence. Upstream's README describes the server
 this is built on; this file covers what is different.
 
-Pair it with [syncly-app](../../../syncly-app) and
-[syncly-web](../../../syncly-web) — the deployment guide lives in the latter.
+Pair it with [syncly-app](https://github.com/shlkin/syncly-app) and
+[syncly-web](https://github.com/shlkin/syncly-web) — the deployment guide lives in the latter.
 
 ## 爱的小窝
 
