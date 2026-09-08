@@ -166,6 +166,74 @@ fn encode_user_id_for_proto(
         .map_err(|error| proto_encode_error("user", &error))
 }
 
+/// An absent link, rendered as the empty string the wire types document.
+///
+/// Watch history, favourites and the couple's shared list all outlive the room
+/// and the media row they point at, so their links are optional in both
+/// directions.
+pub(crate) fn optional_room_id_to_proto(
+    id: Option<synctv_core::models::RoomId>,
+    public_id_codec: &synctv_adapter::PublicIdCodec,
+) -> Result<String, crate::impls::ApiError> {
+    Ok(id
+        .map(|id| encode_room_id_for_proto(id, public_id_codec))
+        .transpose()?
+        .unwrap_or_default())
+}
+
+pub(crate) fn optional_media_id_to_proto(
+    id: Option<synctv_core::models::MediaId>,
+    public_id_codec: &synctv_adapter::PublicIdCodec,
+) -> Result<String, crate::impls::ApiError> {
+    Ok(id
+        .map(|id| encode_media_id_for_proto(id, public_id_codec))
+        .transpose()?
+        .unwrap_or_default())
+}
+
+pub(crate) fn optional_user_id_to_proto(
+    id: Option<synctv_core::models::UserId>,
+    public_id_codec: &synctv_adapter::PublicIdCodec,
+) -> Result<String, crate::impls::ApiError> {
+    Ok(id
+        .map(|id| encode_user_id_for_proto(id, public_id_codec))
+        .transpose()?
+        .unwrap_or_default())
+}
+
+/// Totals are `int32` on the wire; a count that large is a bug, not a page.
+pub(crate) fn total_to_proto(total: i64, kind: &str) -> Result<i32, crate::impls::ApiError> {
+    i32::try_from(total)
+        .map_err(|_| crate::impls::ApiError::Internal(format!("{kind} total exceeds i32::MAX")))
+}
+
+/// Calendar days travel as ISO `YYYY-MM-DD`, matching the proto field rules.
+pub(crate) fn date_to_proto(date: chrono::NaiveDate) -> String {
+    date.format(DATE_WIRE_FORMAT).to_string()
+}
+
+pub(crate) fn optional_date_to_proto(date: Option<chrono::NaiveDate>) -> String {
+    date.map(date_to_proto).unwrap_or_default()
+}
+
+/// Parses a date the proto pattern has already shaped. The pattern only proves
+/// the digits are in the right places, so an impossible day still lands here.
+pub(crate) fn optional_date_from_proto(
+    value: &str,
+    field: &str,
+) -> Result<Option<chrono::NaiveDate>, crate::impls::ApiError> {
+    if value.is_empty() {
+        return Ok(None);
+    }
+    chrono::NaiveDate::parse_from_str(value, DATE_WIRE_FORMAT)
+        .map(Some)
+        .map_err(|_| {
+            crate::impls::ApiError::InvalidInput(format!("{field} must be a date as YYYY-MM-DD"))
+        })
+}
+
+const DATE_WIRE_FORMAT: &str = "%Y-%m-%d";
+
 pub fn room_settings_to_proto(
     settings: &synctv_core::models::RoomSettings,
 ) -> client_proto::RoomSettings {
@@ -410,6 +478,9 @@ pub fn chat_message_selection_from_proto_values(
                 }
                 client_proto::ChatMessageType::SystemPlaybackChanged => {
                     Ok(synctv_core::models::ChatMessageType::SystemPlaybackChanged)
+                }
+                client_proto::ChatMessageType::SystemGift => {
+                    Ok(synctv_core::models::ChatMessageType::SystemGift)
                 }
             }
         })

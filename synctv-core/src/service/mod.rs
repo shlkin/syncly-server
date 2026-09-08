@@ -100,8 +100,9 @@ pub use file_storage::{
 pub use file_upload_policies::{
     chat_attachment_upload_policy, media_cover_upload_policy, media_thumbnail_upload_policy,
     playlist_cover_upload_policy, room_cover_upload_policy, user_avatar_upload_policy,
-    MAX_CHAT_ATTACHMENT_SIZE_BYTES, MAX_MEDIA_COVER_SIZE_BYTES, MAX_MEDIA_THUMBNAIL_SIZE_BYTES,
-    MAX_PLAYLIST_COVER_SIZE_BYTES, MAX_ROOM_COVER_SIZE_BYTES, MAX_USER_AVATAR_SIZE_BYTES,
+    user_profile_background_upload_policy, MAX_CHAT_ATTACHMENT_SIZE_BYTES,
+    MAX_MEDIA_COVER_SIZE_BYTES, MAX_MEDIA_THUMBNAIL_SIZE_BYTES, MAX_PLAYLIST_COVER_SIZE_BYTES,
+    MAX_ROOM_COVER_SIZE_BYTES, MAX_USER_AVATAR_SIZE_BYTES, MAX_USER_PROFILE_BACKGROUND_SIZE_BYTES,
 };
 pub use global_settings::{
     parse_rtmp_advertise_address, AdminDefaultPermissionsSetting, ChatRuntimeSettings,
@@ -277,16 +278,16 @@ pub use user::{
 };
 pub use user::{
     AccountRegistrationOutcome, AuthFactorMethod, AuthenticatedLogin,
-    CreateUserAvatarUploadSession, LoginSession, LoginSessionIdentity, LoginSessionState,
-    LoginSessionStore, LoginStartChallenge, MfaChallenge, MfaSession, MfaSessionStore,
-    OpaqueLoginStartChallenge, OpaquePasswordUpdateVerification, OpaqueRegistrationPurpose,
-    OpaqueRegistrationSession, OpaqueRegistrationSessionStore, OpaqueRegistrationStartChallenge,
-    PendingAccountRegistration, RefreshRateLimitConfig, RegistrationMode, RegistrationPolicy,
-    SensitiveVerificationChallenge, SensitiveVerificationOutcome, SensitiveVerificationSession,
-    SensitiveVerificationSessionStore, TotpRecoveryCodes, TotpSetup, UserDeletedChatMessage,
-    UserDeletedRoomImpact, UserDeletionOptions, UserDeletionSource, UserDeletionSummary,
-    UserRestoreOptions, UserRestoreResult, UserService, UserServiceDependencies,
-    UserServiceRuntimeOptions,
+    CreateUserAvatarUploadSession, CreateUserProfileBackgroundUploadSession, LoginSession,
+    LoginSessionIdentity, LoginSessionState, LoginSessionStore, LoginStartChallenge, MfaChallenge,
+    MfaSession, MfaSessionStore, OpaqueLoginStartChallenge, OpaquePasswordUpdateVerification,
+    OpaqueRegistrationPurpose, OpaqueRegistrationSession, OpaqueRegistrationSessionStore,
+    OpaqueRegistrationStartChallenge, PendingAccountRegistration, RefreshRateLimitConfig,
+    RegistrationMode, RegistrationPolicy, SensitiveVerificationChallenge,
+    SensitiveVerificationOutcome, SensitiveVerificationSession, SensitiveVerificationSessionStore,
+    TotpRecoveryCodes, TotpSetup, UserDeletedChatMessage, UserDeletedRoomImpact,
+    UserDeletionOptions, UserDeletionSource, UserDeletionSummary, UserRestoreOptions,
+    UserRestoreResult, UserService, UserServiceDependencies, UserServiceRuntimeOptions,
 };
 pub use user::{
     InMemoryLoginSessionStore, InMemoryMfaSessionStore, InMemoryOpaqueRegistrationSessionStore,

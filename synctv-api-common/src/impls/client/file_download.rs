@@ -57,6 +57,26 @@ pub fn avatar_chunk_stream(
     )
 }
 
+pub fn profile_background_chunk_stream(
+    download: synctv_core::models::FileObjectDownload,
+) -> impl futures::Stream<
+    Item = Result<synctv_proto::client::UserProfileBackgroundObjectResponse, ApiError>,
+> + Send
+       + 'static {
+    generic_chunk_stream(
+        download,
+        |mime_type, content_manifest_sha256, data, content_range, total_size_bytes| {
+            synctv_proto::client::UserProfileBackgroundObjectResponse {
+                mime_type,
+                content_manifest_sha256,
+                data,
+                content_range,
+                total_size_bytes,
+            }
+        },
+    )
+}
+
 pub fn chat_attachment_chunk_stream(
     room_id: String,
     download: synctv_core::models::FileObjectDownload,

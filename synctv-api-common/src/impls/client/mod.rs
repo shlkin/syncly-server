@@ -15,14 +15,23 @@
 
 mod auth;
 pub use auth::login_outcome_to_proto;
+mod check_in;
+pub(crate) use check_in::{check_in_award_mode_from_proto, check_in_config_to_proto};
+mod couple;
+mod couple_nest;
 pub mod file_download;
+mod friends;
+mod gift;
+pub(crate) use gift::gift_to_proto;
 pub mod live_danmaku;
 pub mod media;
 mod member;
+mod messaging;
 pub mod passkey;
 mod playback;
 pub mod playback_lifecycle;
 pub mod playlist;
+mod privacy;
 mod report;
 mod room;
 pub(crate) use room::build_get_chat_history_request;
@@ -32,6 +41,9 @@ pub use room::{
 };
 pub mod stream;
 mod user;
+mod vod_sources;
+pub(crate) use vod_sources::{vod_source_format_from_proto, vod_source_format_to_proto};
+mod watch_history;
 mod webrtc;
 pub use playback::{build_playback_state_update, build_start_playback_request};
 pub use user::{user_notification_preferences_to_proto, user_preferences_update_from_proto};

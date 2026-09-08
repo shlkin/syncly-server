@@ -22,6 +22,23 @@ const CONTENT_REPORT_ID_TAG: u64 = 7;
 const ROOM_CATEGORY_ID_TAG: u64 = 8;
 const ROOM_LABEL_ID_TAG: u64 = 9;
 const PLAYBACK_HISTORY_ENTRY_ID_TAG: u64 = 10;
+const WATCH_HISTORY_ENTRY_ID_TAG: u64 = 11;
+const MEDIA_FAVORITE_ID_TAG: u64 = 12;
+const FRIEND_REQUEST_ID_TAG: u64 = 13;
+const CONVERSATION_ID_TAG: u64 = 14;
+const SOCIAL_MESSAGE_ID_TAG: u64 = 15;
+const COUPLE_SPACE_ID_TAG: u64 = 16;
+const COUPLE_FAVORITE_ID_TAG: u64 = 17;
+const POINT_TRANSACTION_ID_TAG: u64 = 18;
+const GIFT_ID_TAG: u64 = 19;
+const GIFT_RECORD_ID_TAG: u64 = 20;
+const VOD_SOURCE_ID_TAG: u64 = 21;
+const COUPLE_MEMORY_ID_TAG: u64 = 22;
+const COUPLE_ALBUM_ID_TAG: u64 = 23;
+const COUPLE_MEDIA_ID_TAG: u64 = 24;
+const COUPLE_ANNIVERSARY_ID_TAG: u64 = 25;
+const COUPLE_TODO_ID_TAG: u64 = 26;
+const COUPLE_AI_WORK_ID_TAG: u64 = 27;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PublicIdKind {
@@ -35,6 +52,23 @@ pub enum PublicIdKind {
     RoomCategory,
     RoomLabel,
     PlaybackHistoryEntry,
+    WatchHistoryEntry,
+    MediaFavorite,
+    FriendRequest,
+    Conversation,
+    SocialMessage,
+    CoupleSpace,
+    CoupleFavorite,
+    PointTransaction,
+    Gift,
+    GiftRecord,
+    VodSource,
+    CoupleMemory,
+    CoupleAlbum,
+    CoupleMedia,
+    CoupleAnniversary,
+    CoupleTodo,
+    CoupleAiWork,
 }
 
 impl PublicIdKind {
@@ -51,6 +85,23 @@ impl PublicIdKind {
             Self::RoomCategory => "RoomCategoryId",
             Self::RoomLabel => "RoomLabelId",
             Self::PlaybackHistoryEntry => "PlaybackHistoryEntryId",
+            Self::WatchHistoryEntry => "WatchHistoryEntryId",
+            Self::MediaFavorite => "MediaFavoriteId",
+            Self::FriendRequest => "FriendRequestId",
+            Self::Conversation => "ConversationId",
+            Self::SocialMessage => "SocialMessageId",
+            Self::CoupleSpace => "CoupleSpaceId",
+            Self::CoupleFavorite => "CoupleFavoriteId",
+            Self::PointTransaction => "PointTransactionId",
+            Self::Gift => "GiftId",
+            Self::GiftRecord => "GiftRecordId",
+            Self::VodSource => "VodSourceId",
+            Self::CoupleMemory => "CoupleMemoryId",
+            Self::CoupleAlbum => "CoupleAlbumId",
+            Self::CoupleMedia => "CoupleMediaId",
+            Self::CoupleAnniversary => "CoupleAnniversaryId",
+            Self::CoupleTodo => "CoupleTodoId",
+            Self::CoupleAiWork => "CoupleAiWorkId",
         }
     }
 
@@ -67,6 +118,23 @@ impl PublicIdKind {
             Self::RoomCategory => ROOM_CATEGORY_ID_TAG,
             Self::RoomLabel => ROOM_LABEL_ID_TAG,
             Self::PlaybackHistoryEntry => PLAYBACK_HISTORY_ENTRY_ID_TAG,
+            Self::WatchHistoryEntry => WATCH_HISTORY_ENTRY_ID_TAG,
+            Self::MediaFavorite => MEDIA_FAVORITE_ID_TAG,
+            Self::FriendRequest => FRIEND_REQUEST_ID_TAG,
+            Self::Conversation => CONVERSATION_ID_TAG,
+            Self::SocialMessage => SOCIAL_MESSAGE_ID_TAG,
+            Self::CoupleSpace => COUPLE_SPACE_ID_TAG,
+            Self::CoupleFavorite => COUPLE_FAVORITE_ID_TAG,
+            Self::PointTransaction => POINT_TRANSACTION_ID_TAG,
+            Self::Gift => GIFT_ID_TAG,
+            Self::GiftRecord => GIFT_RECORD_ID_TAG,
+            Self::VodSource => VOD_SOURCE_ID_TAG,
+            Self::CoupleMemory => COUPLE_MEMORY_ID_TAG,
+            Self::CoupleAlbum => COUPLE_ALBUM_ID_TAG,
+            Self::CoupleMedia => COUPLE_MEDIA_ID_TAG,
+            Self::CoupleAnniversary => COUPLE_ANNIVERSARY_ID_TAG,
+            Self::CoupleTodo => COUPLE_TODO_ID_TAG,
+            Self::CoupleAiWork => COUPLE_AI_WORK_ID_TAG,
         }
     }
 
@@ -83,6 +151,23 @@ impl PublicIdKind {
             Self::RoomCategory => "roomcat_",
             Self::RoomLabel => "roomlbl_",
             Self::PlaybackHistoryEntry => "ph_",
+            Self::WatchHistoryEntry => "wh_",
+            Self::MediaFavorite => "mfav_",
+            Self::FriendRequest => "frq_",
+            Self::Conversation => "conv_",
+            Self::SocialMessage => "smsg_",
+            Self::CoupleSpace => "cpl_",
+            Self::CoupleFavorite => "cfav_",
+            Self::PointTransaction => "pt_",
+            Self::Gift => "gift_",
+            Self::GiftRecord => "grec_",
+            Self::VodSource => "vsrc_",
+            Self::CoupleMemory => "cmem_",
+            Self::CoupleAlbum => "calb_",
+            Self::CoupleMedia => "cmed_",
+            Self::CoupleAnniversary => "cann_",
+            Self::CoupleTodo => "ctodo_",
+            Self::CoupleAiWork => "cai_",
         }
     }
 }
@@ -283,6 +368,74 @@ impl PublicIdCodec {
         self.encode_i64(id, PublicIdKind::PlaybackHistoryEntry)
     }
 
+    pub fn encode_watch_history_entry_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::WatchHistoryEntry)
+    }
+
+    pub fn encode_media_favorite_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::MediaFavorite)
+    }
+
+    pub fn encode_friend_request_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::FriendRequest)
+    }
+
+    pub fn encode_conversation_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::Conversation)
+    }
+
+    pub fn encode_social_message_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::SocialMessage)
+    }
+
+    pub fn encode_couple_space_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleSpace)
+    }
+
+    pub fn encode_couple_favorite_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleFavorite)
+    }
+
+    pub fn encode_point_transaction_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::PointTransaction)
+    }
+
+    pub fn encode_gift_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::Gift)
+    }
+
+    pub fn encode_gift_record_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::GiftRecord)
+    }
+
+    pub fn encode_vod_source_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::VodSource)
+    }
+
+    pub fn encode_couple_memory_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleMemory)
+    }
+
+    pub fn encode_couple_album_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleAlbum)
+    }
+
+    pub fn encode_couple_media_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleMedia)
+    }
+
+    pub fn encode_couple_anniversary_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleAnniversary)
+    }
+
+    pub fn encode_couple_todo_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleTodo)
+    }
+
+    pub fn encode_couple_ai_work_id(&self, id: i64) -> Result<String, String> {
+        self.encode_i64(id, PublicIdKind::CoupleAiWork)
+    }
+
     pub fn decode_user_id(&self, value: &str) -> Result<UserId, String> {
         self.decode(value)
     }
@@ -317,6 +470,74 @@ impl PublicIdCodec {
 
     pub fn decode_playback_history_entry_id(&self, value: &str) -> Result<i64, String> {
         self.decode_i64(value, PublicIdKind::PlaybackHistoryEntry)
+    }
+
+    pub fn decode_watch_history_entry_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::WatchHistoryEntry)
+    }
+
+    pub fn decode_media_favorite_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::MediaFavorite)
+    }
+
+    pub fn decode_friend_request_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::FriendRequest)
+    }
+
+    pub fn decode_conversation_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::Conversation)
+    }
+
+    pub fn decode_social_message_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::SocialMessage)
+    }
+
+    pub fn decode_couple_space_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleSpace)
+    }
+
+    pub fn decode_couple_favorite_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleFavorite)
+    }
+
+    pub fn decode_point_transaction_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::PointTransaction)
+    }
+
+    pub fn decode_gift_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::Gift)
+    }
+
+    pub fn decode_gift_record_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::GiftRecord)
+    }
+
+    pub fn decode_vod_source_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::VodSource)
+    }
+
+    pub fn decode_couple_memory_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleMemory)
+    }
+
+    pub fn decode_couple_album_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleAlbum)
+    }
+
+    pub fn decode_couple_media_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleMedia)
+    }
+
+    pub fn decode_couple_anniversary_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleAnniversary)
+    }
+
+    pub fn decode_couple_todo_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleTodo)
+    }
+
+    pub fn decode_couple_ai_work_id(&self, value: &str) -> Result<i64, String> {
+        self.decode_i64(value, PublicIdKind::CoupleAiWork)
     }
 
     fn encode_i64(&self, id: i64, kind: PublicIdKind) -> Result<String, String> {

@@ -53,7 +53,10 @@ mod auth;
 mod bans;
 mod batch;
 mod chat_moderation;
+mod check_in;
 mod common;
+mod conversations;
+mod gift;
 mod lifecycle;
 mod livestream;
 mod mapping;
@@ -67,6 +70,7 @@ mod rooms;
 pub mod settings;
 mod stats;
 mod users;
+mod vod_sources;
 
 pub use auth::{AdminAuthValidator, ValidatedAdmin};
 use common::*;

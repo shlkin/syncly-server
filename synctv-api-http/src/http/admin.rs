@@ -49,6 +49,18 @@ pub(crate) struct AdminChatMessagePath {
     message_id: String,
 }
 
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AdminGiftPath {
+    gift_id: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct AdminVodSourcePath {
+    source_id: String,
+}
+
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "openapi", derive(utoipa::IntoParams))]
@@ -169,6 +181,30 @@ pub(crate) fn create_admin_router() -> Router<AppState> {
         )
         // Settings
         .route("/settings", get(get_settings).post(set_settings))
+        // 每日签到 rules: award mode, amounts and the day boundary
+        .route(
+            "/check-in-config",
+            get(get_check_in_config).patch(update_check_in_config),
+        )
+        // 礼物 catalog: one collection route, plus one per-entry route. `key` is
+        // create-only, so an edit never reaches it.
+        .route("/gifts", get(list_gift_catalog).post(create_gift))
+        .route("/gifts/{giftId}", patch(update_gift).delete(delete_gift))
+        .route("/gifts/records", get(list_gift_records))
+        .route(
+            "/vod-sources",
+            get(list_vod_sources).post(create_vod_source),
+        )
+        .route(
+            "/vod-sources/{sourceId}",
+            patch(update_vod_source).delete(delete_vod_source),
+        )
+        .route("/points/transactions", get(list_point_transactions))
+        // 群聊 moderation. Reads only: an administrator inspects a thread here,
+        // and removing a message stays a member's own action.
+        .route("/conversations", get(list_conversations))
+        .route("/conversations/members", get(list_conversation_members))
+        .route("/conversations/messages", get(list_conversation_messages))
         .route("/settings/export", post(export_settings))
         .route(
             "/settings/import",
@@ -436,6 +472,359 @@ async fn evict_expired_slice_cache(
     Ok(Json(
         synctv_api_common::impls::admin::slice_cache_evict_expired_to_admin_proto(response),
     ))
+}
+
+/// Reads the 签到 rules. Takes no body: there is one server-wide config, and the
+/// client that renders the form needs its current values, not a selector.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/check-in-config",
+        tag = "Admin",
+        responses(
+            (status = 200, description = "Check-in configuration", body = admin::GetCheckInConfigResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn get_check_in_config(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+) -> AppResult<Json<admin::GetCheckInConfigResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            api.get_check_in_config(admin::GetCheckInConfigRequest {}, &validated.user_id)
+                .await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        patch,
+        path = "/api/admin/check-in-config",
+        tag = "Admin",
+        request_body = admin::UpdateCheckInConfigRequest,
+        responses(
+            (status = 200, description = "Check-in configuration updated", body = admin::UpdateCheckInConfigResponse),
+            (status = 400, description = "Invalid award range", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn update_check_in_config(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<admin::UpdateCheckInConfigRequest>,
+) -> AppResult<Json<admin::UpdateCheckInConfigResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.update_check_in_config(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// The 礼物 catalog. Disabled entries are returned too, so an admin can bring one
+/// back; pass `enabledOnly=true` to preview what a send panel sees.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/gifts",
+        tag = "Admin",
+        params(admin::ListGiftCatalogRequest),
+        responses(
+            (status = 200, description = "Gift catalog", body = admin::ListGiftCatalogResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_gift_catalog(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListGiftCatalogRequest>,
+) -> AppResult<Json<admin::ListGiftCatalogResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_gift_catalog(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Adds a catalog entry.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        post,
+        path = "/api/admin/gifts",
+        tag = "Admin",
+        request_body = admin::CreateGiftRequest,
+        responses(
+            (status = 200, description = "Gift created", body = admin::CreateGiftResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 409, description = "Gift key already exists", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn create_gift(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<admin::CreateGiftRequest>,
+) -> AppResult<Json<admin::CreateGiftResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.create_gift(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// A partial edit: omitted fields keep their stored value. There is no `key` to
+/// send — records snapshot it, so a rename would orphan history.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        patch,
+        path = "/api/admin/gifts/{giftId}",
+        tag = "Admin",
+        params(("giftId" = String, Path, description = "Gift ID")),
+        request_body = admin::UpdateGiftRequest,
+        responses(
+            (status = 200, description = "Gift updated", body = admin::UpdateGiftResponse),
+            (status = 400, description = "Invalid request", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 404, description = "Gift not found", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn update_gift(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<AdminGiftPath>,
+    Json(mut req): Json<admin::UpdateGiftRequest>,
+) -> AppResult<Json<admin::UpdateGiftResponse>> {
+    req.gift_id = path.gift_id;
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.update_gift(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Removes an entry that has never been sent. One that has is refused — disable
+/// it instead, so the records pointing at it stay readable.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        delete,
+        path = "/api/admin/gifts/{giftId}",
+        tag = "Admin",
+        params(("giftId" = String, Path, description = "Gift ID")),
+        responses(
+            (status = 200, description = "Gift deleted", body = admin::DeleteGiftResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 404, description = "Gift not found", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 409, description = "Gift has been sent; disable it instead", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn delete_gift(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(req): Path<admin::DeleteGiftRequest>,
+) -> AppResult<Json<admin::DeleteGiftResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.delete_gift(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Every 影视 subscription source, disabled ones included: disabling is how a
+/// source is retired, and a hidden disabled row could never be brought back.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/vod-sources",
+        tag = "Admin",
+        params(admin::ListVodSourcesRequest),
+        responses(
+            (status = 200, description = "Subscription sources", body = admin::ListVodSourcesResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_vod_sources(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListVodSourcesRequest>,
+) -> AppResult<Json<admin::ListVodSourcesResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_vod_sources(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Publishes a source to every account. The endpoint must be an absolute
+/// http/https URL: clients fetch it directly, from devices that share no origin
+/// with this server.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        post,
+        path = "/api/admin/vod-sources",
+        tag = "Admin",
+        request_body = admin::CreateVodSourceRequest,
+        responses(
+            (status = 200, description = "Source created", body = admin::CreateVodSourceResponse),
+            (status = 400, description = "Invalid request", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 409, description = "Endpoint already registered", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn create_vod_source(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<admin::CreateVodSourceRequest>,
+) -> AppResult<Json<admin::CreateVodSourceResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.create_vod_source(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// A partial edit: omitted fields keep their stored value. Headers are the one
+/// exception a map forces — send `replaceHeaders` to swap the whole bag.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        patch,
+        path = "/api/admin/vod-sources/{sourceId}",
+        tag = "Admin",
+        params(("sourceId" = String, Path, description = "Subscription source ID")),
+        request_body = admin::UpdateVodSourceRequest,
+        responses(
+            (status = 200, description = "Source updated", body = admin::UpdateVodSourceResponse),
+            (status = 400, description = "Invalid request", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 404, description = "Source not found", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn update_vod_source(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<AdminVodSourcePath>,
+    Json(mut req): Json<admin::UpdateVodSourceRequest>,
+) -> AppResult<Json<admin::UpdateVodSourceResponse>> {
+    req.source_id = path.source_id;
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.update_vod_source(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Removes a source outright. It holds no history of its own — every catalog it
+/// produced was fetched live — so there is nothing left pointing at it.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        delete,
+        path = "/api/admin/vod-sources/{sourceId}",
+        tag = "Admin",
+        params(("sourceId" = String, Path, description = "Subscription source ID")),
+        responses(
+            (status = 200, description = "Source deleted", body = admin::DeleteVodSourceResponse),
+            (status = 401, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema),
+            (status = 404, description = "Source not found", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn delete_vod_source(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(req): Path<admin::DeleteVodSourceRequest>,
+) -> AppResult<Json<admin::DeleteVodSourceResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.delete_vod_source(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
 }
 
 #[cfg_attr(
@@ -2807,4 +3196,175 @@ mod tests {
         );
         Ok(())
     }
+}
+
+/// Every gift on the server: who sent it, who received it, what it cost.
+///
+/// A gift moves points between two accounts, so the send is the only place in
+/// the economy where value crosses from one balance to another. This is the
+/// view that shows that flow; `/points/transactions` shows the ledger rows it
+/// wrote.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/gifts/records",
+        tag = "Admin",
+        params(admin::ListGiftRecordsRequest),
+        responses(
+            (status = 200, description = "Gift sends, newest first", body = admin::ListGiftRecordsResponse),
+            (status = 403, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_gift_records(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListGiftRecordsRequest>,
+) -> AppResult<Json<admin::ListGiftRecordsResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_gift_records(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Every conversation on the server, most recently active first.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/conversations",
+        tag = "Admin",
+        params(admin::ListConversationsRequest),
+        responses(
+            (status = 200, description = "Conversations, most recently active first", body = admin::ListConversationsResponse),
+            (status = 403, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_conversations(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListConversationsRequest>,
+) -> AppResult<Json<admin::ListConversationsResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_conversations(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// Who is in one conversation, owners and admins first.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/conversations/members",
+        tag = "Admin",
+        params(admin::ListConversationMembersRequest),
+        responses(
+            (status = 200, description = "Members of one conversation", body = admin::ListConversationMembersResponse),
+            (status = 403, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_conversation_members(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListConversationMembersRequest>,
+) -> AppResult<Json<admin::ListConversationMembersResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_conversation_members(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// A page of one conversation's history, newest first.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/conversations/messages",
+        tag = "Admin",
+        params(admin::ListConversationMessagesRequest),
+        responses(
+            (status = 200, description = "Messages, newest first", body = admin::ListConversationMessagesResponse),
+            (status = 403, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_conversation_messages(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListConversationMessagesRequest>,
+) -> AppResult<Json<admin::ListConversationMessagesResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_conversation_messages(req, &validated.user_id)
+                .await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
+/// The points ledger across every account, newest first.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/admin/points/transactions",
+        tag = "Admin",
+        params(admin::ListPointTransactionsRequest),
+        responses(
+            (status = 200, description = "Point movements, newest first", body = admin::ListPointTransactionsResponse),
+            (status = 403, description = "Admin authentication required", body = crate::openapi::GoogleRpcStatusSchema)
+        ),
+        security(("bearer_auth" = []))
+    )
+)]
+pub(crate) async fn list_point_transactions(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<admin::ListPointTransactionsRequest>,
+) -> AppResult<Json<admin::ListPointTransactionsResponse>> {
+    let resp = execute_admin_endpoint(
+        &state,
+        request_meta,
+        require_admin_api,
+        move |api, validated, _| async move {
+            synctv_api_common::impls::validate_proto_request(&req)?;
+            api.list_point_transactions(req, &validated.user_id).await
+        },
+    )
+    .await?;
+    Ok(Json(resp))
 }

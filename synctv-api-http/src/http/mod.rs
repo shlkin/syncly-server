@@ -11,10 +11,16 @@
 pub(crate) mod admin;
 pub(crate) mod admin_execute;
 pub(crate) mod auth;
+pub(crate) mod check_in;
+pub(crate) mod couple;
+pub(crate) mod couple_nest;
 pub(crate) mod email;
 pub(crate) mod error;
+pub(crate) mod friends;
+pub(crate) mod gift;
 pub(crate) mod health;
 pub(crate) mod livestream_webrtc;
+pub(crate) mod messaging;
 pub(crate) mod metrics_middleware;
 pub(crate) mod middleware;
 pub(crate) mod native_app_association;
@@ -26,6 +32,8 @@ pub(crate) mod room_extra;
 pub(crate) mod ticket;
 pub(crate) mod user;
 pub(crate) mod validation;
+pub(crate) mod vod_source;
+pub(crate) mod watch_history;
 #[cfg(any(feature = "web-ui", feature = "web-ui-dynamic"))]
 pub(crate) mod web_ui;
 pub(crate) mod webrtc;
@@ -789,6 +797,25 @@ fn register_extracted_user_routes() -> Router<AppState> {
             "/api/user/blocks/{userId}",
             axum::routing::delete(user::unblock_user),
         )
+        .route("/api/user/profile", get(user::get_user_profile))
+        .route(
+            "/api/user/signature",
+            axum::routing::put(user::update_user_signature),
+        )
+        .route(
+            "/api/user/following",
+            get(user::list_following).post(user::follow_user),
+        )
+        .route(
+            "/api/user/following/{userId}",
+            axum::routing::delete(user::unfollow_user),
+        )
+        .route("/api/user/followers", get(user::list_followers))
+        .route("/api/user/search", get(user::search_users))
+        .route(
+            "/api/user/privacy",
+            get(user::get_privacy_settings).patch(user::update_privacy_settings),
+        )
         .route("/api/user/rooms/discover", get(user::discover_rooms))
         .route(
             "/api/user/rooms/{roomId}/discovery",
@@ -808,6 +835,15 @@ fn register_extracted_user_routes() -> Router<AppState> {
         .route(
             "/api/user/avatar",
             axum::routing::put(user::update_user_avatar).delete(user::clear_user_avatar),
+        )
+        .route(
+            "/api/user/profile-background/upload-session",
+            post(user::create_user_profile_background_upload_session),
+        )
+        .route(
+            "/api/user/profile-background",
+            axum::routing::put(user::update_user_profile_background)
+                .delete(user::clear_user_profile_background),
         )
         .route("/api/user/email/bind/start", post(user::start_email_bind))
         .route(
@@ -869,6 +905,23 @@ fn register_extracted_user_routes() -> Router<AppState> {
         .route("/api/user/totp", axum::routing::delete(user::delete_totp))
         .route("/api/user/account-closure", post(user::close_account))
         .route("/api/user/logout", post(auth::logout))
+}
+
+/// Profile background objects. Separate from the avatar object routes because
+/// the body limit differs: a background may be an animated GIF several times the
+/// size of any avatar.
+fn register_user_profile_background_object_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/api/user/profile-background-objects/{encodedObjectKey}/complete",
+            post(user::complete_user_profile_background_upload_session),
+        )
+        .route(
+            "/api/user/profile-background-objects/{encodedObjectKey}",
+            axum::routing::put(user::upload_user_profile_background_object)
+                .get(user::get_user_profile_background_object),
+        )
+        .layer(axum::extract::DefaultBodyLimit::max(body_limits::COVER))
 }
 
 fn register_user_avatar_object_routes() -> Router<AppState> {
@@ -949,6 +1002,18 @@ fn register_all_routes() -> Router<AppState> {
         .merge(register_auth_routes())
         .merge(register_extracted_user_routes())
         .merge(register_user_avatar_object_routes())
+        .merge(register_user_profile_background_object_routes())
+        // 我的 tab: history, starred media, check-in, 情侣空间 and 消息. Each owns its
+        // own module, so none of them grows user.rs any further.
+        .merge(watch_history::routes())
+        .merge(check_in::routes())
+        .merge(couple::routes())
+        .merge(couple_nest::routes())
+        .merge(couple_nest::media_object_routes())
+        .merge(friends::routes())
+        .merge(gift::routes())
+        .merge(vod_source::routes())
+        .merge(messaging::routes())
         .merge(
             Router::new()
                 .route("/api/rooms/{roomId}/members", post(room_extra::add_member))

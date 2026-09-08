@@ -1486,7 +1486,7 @@ async fn test_force_disconnect_user_publishes_cluster_kick_event() -> TestResult
         other => {
             return Err(test_error(format!(
                 "expected KickUser event, got {other:?}"
-            )))
+            )));
         }
     }
     Ok(())
@@ -3524,7 +3524,7 @@ async fn test_delete_user_publishes_kick_user_realtime_event() -> TestResult {
         other => {
             return Err(test_error(format!(
                 "expected KickUser event, got {other:?}"
-            )))
+            )));
         }
     }
     Ok(())
@@ -6212,7 +6212,7 @@ async fn test_delete_playlist_publishes_cascaded_playlist_and_media_events_for_g
             other => {
                 return Err(test_error(format!(
                     "unexpected admin delete_playlist cascade event: {other:?}"
-                )))
+                )));
             }
         }
     }
@@ -6555,7 +6555,7 @@ async fn test_edit_media_bypasses_room_membership_requirement_for_global_admin()
         other => {
             return Err(test_error(format!(
                 "expected MediaUpdated event, got {other:?}"
-            )))
+            )));
         }
     }
     Ok(())
@@ -6818,7 +6818,7 @@ async fn test_ban_room_publishes_room_banned_realtime_event() -> TestResult {
         other => {
             return Err(test_error(format!(
                 "expected RoomBanned event, got {other:?}"
-            )))
+            )));
         }
     }
     Ok(())

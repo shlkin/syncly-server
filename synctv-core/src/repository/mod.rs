@@ -2,12 +2,16 @@ pub(crate) mod audit;
 pub(crate) mod ban;
 pub mod chat;
 pub mod chat_moderation;
+pub(crate) mod check_in;
 pub(crate) mod content_report;
+pub(crate) mod couple;
+pub mod couple_nest;
 pub(crate) mod email_bind;
 pub mod email_outbox;
 pub(crate) mod email_registration_token;
 pub(crate) mod email_token;
 pub(crate) mod file_storage;
+pub(crate) mod gift;
 pub(crate) mod jsonb;
 pub(crate) mod media;
 pub(crate) mod notification;
@@ -29,14 +33,19 @@ pub(crate) mod room_resource_event;
 pub(crate) mod room_settings;
 pub(crate) mod room_taxonomy;
 pub(crate) mod settings;
+pub(crate) mod social;
 mod sqlx_types;
 pub(crate) mod system_stats;
 pub(crate) mod totp_credential;
 pub(crate) mod user;
 pub(crate) mod user_email;
+pub(crate) mod user_follows;
 pub(crate) mod user_oauth_provider;
 pub(crate) mod user_password;
 pub(crate) mod user_preferences;
+pub(crate) mod user_privacy;
+pub(crate) mod user_watch_history;
+pub mod vod_source;
 pub(crate) mod webauthn_credential;
 
 use sha2::{Digest, Sha256};
@@ -68,6 +77,7 @@ pub use file_storage::{
     UpsertFileObjectGroup, UpsertFileObjectVariant, UpsertFileUploadSession,
     UpsertFileUploadSessionPart,
 };
+pub use gift::{GiftShowcase, GiftShowcaseEntry, PointLedgerEntry};
 pub(crate) use jsonb::{JsonbArray, OptionalJsonbArray};
 pub use media::{MediaListItem, MediaRepository};
 pub use notification::NotificationRepository;
@@ -99,9 +109,11 @@ pub use system_stats::{SystemStats, SystemStatsRepository};
 pub use totp_credential::{TotpCredential, TotpCredentialRepository};
 pub use user::UserRepository;
 pub use user_email::{UserEmailRepository, UserWithEmail};
+pub use user_follows::FollowProfileStats;
 pub use user_oauth_provider::UserOAuthProviderRepository;
 pub use user_password::{PasswordCredentialMaterial, UserPasswordRepository};
 pub use user_preferences::UserPreferencesRepository;
+pub use user_privacy::{UserPrivacySettings, UserSearchHit};
 pub use webauthn_credential::{WebAuthnCredential, WebAuthnCredentialRepository};
 
 #[must_use]

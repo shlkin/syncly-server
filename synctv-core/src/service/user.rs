@@ -158,19 +158,29 @@ impl std::fmt::Debug for UserService {
 
 mod avatar;
 mod blocking;
+mod check_in;
 mod constructor;
+mod couple;
+mod couple_nest;
 mod deletion;
 pub use deletion::{
     UserDeletedChatMessage, UserDeletedRoomImpact, UserDeletionOptions, UserDeletionSource,
     UserDeletionSummary,
 };
+mod following;
+mod friends;
+mod gift;
 mod identity_bindings;
 mod identity_policy;
 mod login;
 mod lookup;
+mod messaging;
 mod oauth2_users;
 mod password_credentials;
+mod privacy;
 mod profile;
+mod profile_background;
+pub use profile_background::CreateUserProfileBackgroundUploadSession;
 mod recovery;
 pub use recovery::{UserRestoreOptions, UserRestoreResult};
 mod registration_auth;
@@ -180,6 +190,8 @@ mod session_stores;
 mod ticket_validation;
 mod username_cache;
 mod verification;
+mod vod_sources;
+mod watch_history;
 use identity_policy::password_binding;
 pub(crate) use registration_types::PendingRegistrationConflict;
 pub use registration_types::{

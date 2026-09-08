@@ -81,6 +81,7 @@ pub const fn file_object_route_prefix(kind: FileObjectKind) -> Option<&'static s
         FileObjectKind::MediaThumbnail => Some("/api/media/thumbnail-objects"),
         FileObjectKind::RoomCover => Some("/api/room/cover-objects"),
         FileObjectKind::PlaylistCover => Some("/api/playlist/cover-objects"),
+        FileObjectKind::UserProfileBackground => Some("/api/user/profile-background-objects"),
         FileObjectKind::Generic => None,
     }
 }
@@ -141,6 +142,9 @@ fn file_object_access_kind_to_proto(
         }
         FileObjectKind::RoomCover => synctv_proto::client::FileObjectAccessKind::RoomCover,
         FileObjectKind::PlaylistCover => synctv_proto::client::FileObjectAccessKind::PlaylistCover,
+        FileObjectKind::UserProfileBackground => {
+            synctv_proto::client::FileObjectAccessKind::UserProfileBackground
+        }
         FileObjectKind::Generic => synctv_proto::client::FileObjectAccessKind::Generic,
     }
 }

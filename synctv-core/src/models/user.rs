@@ -305,6 +305,41 @@ pub struct BlockedUser {
     pub blocked_at: DateTime<Utc>,
 }
 
+/// An account's public profile page: who they are, plus the follow graph around
+/// them as one particular viewer sees it.
+///
+/// The signature lives in `user_profile_details` rather than on [`User`], so it
+/// is carried here instead of widening the projection that backs authentication
+/// and every member list.
+#[derive(Debug, Clone)]
+pub struct UserProfile {
+    pub user: User,
+    /// Empty when the account has not written one.
+    pub signature: String,
+    /// Stored file behind the page header, or [`None`] for the default backdrop.
+    pub background_file_reference_id: Option<i64>,
+    pub following_count: i64,
+    pub follower_count: i64,
+    /// Whether the viewer follows this account. False when there is no viewer.
+    pub viewer_following: bool,
+    /// Whether this account follows the viewer back. With [`Self::viewer_following`]
+    /// set, the pair is a mutual follow.
+    pub following_viewer: bool,
+    /// Whether anyone but the owner may open the two follow lists. The counts
+    /// above are reported either way — a private list is not an empty one.
+    pub show_following: bool,
+    pub show_followers: bool,
+}
+
+/// One end of a follow edge, listed on the following and followers pages.
+#[derive(Debug, Clone)]
+pub struct FollowedUser {
+    pub user: User,
+    pub followed_at: DateTime<Utc>,
+    /// The two accounts follow each other.
+    pub mutual: bool,
+}
+
 /// Administrative metadata for the account deletion and recovery lifecycle.
 ///
 /// Authentication and normal user lookups only need [`User`]. Keeping this

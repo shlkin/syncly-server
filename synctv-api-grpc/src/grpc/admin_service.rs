@@ -14,33 +14,41 @@ use synctv_proto::admin::{
     ApproveUserRegistrationReviewRequest, ApproveUserRegistrationReviewResponse, BanRoomRequest,
     BanUserRequest, BatchBanRoomsRequest, BatchBanRoomsResponse, BatchBanUsersRequest,
     BatchBanUsersResponse, BatchDeleteRoomsRequest, BatchDeleteRoomsResponse,
-    BatchDeleteUsersRequest, BatchDeleteUsersResponse, ContentReport, CreateUserRequest,
-    DeleteRoomCategoryRequest, DeleteRoomCategoryResponse, DeleteRoomLabelRequest,
-    DeleteRoomLabelResponse, DeleteRoomRequest, DeleteRoomResponse, DeleteUserRequest,
-    DeleteUserResponse, EvictExpiredSliceCacheRequest, EvictExpiredSliceCacheResponse,
-    ExportSettingsRequest, GetContentReportRequest, GetRoomMembersRequest, GetRoomMembersResponse,
-    GetRoomRequest, GetRoomSettingsRequest, GetRoomSettingsResponse, GetServiceStateRequest,
+    BatchDeleteUsersRequest, BatchDeleteUsersResponse, ContentReport, CreateGiftRequest,
+    CreateGiftResponse, CreateUserRequest, CreateVodSourceRequest, CreateVodSourceResponse,
+    DeleteGiftRequest, DeleteGiftResponse, DeleteRoomCategoryRequest, DeleteRoomCategoryResponse,
+    DeleteRoomLabelRequest, DeleteRoomLabelResponse, DeleteRoomRequest, DeleteRoomResponse,
+    DeleteUserRequest, DeleteUserResponse, DeleteVodSourceRequest, DeleteVodSourceResponse,
+    EvictExpiredSliceCacheRequest, EvictExpiredSliceCacheResponse, ExportSettingsRequest,
+    GetContentReportRequest, GetRoomMembersRequest, GetRoomMembersResponse, GetRoomRequest,
+    GetRoomSettingsRequest, GetRoomSettingsResponse, GetServiceStateRequest,
     GetServiceStateResponse, GetSettingsRequest, GetSliceCacheStatsRequest,
     GetSliceCacheStatsResponse, GetUserPreferencesRequest, GetUserPreferencesResponse,
     GetUserRequest, GetUserRoomsRequest, GetUserRoomsResponse, ImportSettingsRequest,
     ImportSettingsResponse, KickMemberRequest, KickMemberResponse, KickStreamRequest,
     KickStreamResponse, ListActiveStreamsRequest, ListActiveStreamsResponse, ListAdminsRequest,
     ListAdminsResponse, ListBanRecordsRequest, ListBanRecordsResponse, ListContentReportsRequest,
-    ListContentReportsResponse, ListRoomCategoriesRequest, ListRoomCategoriesResponse,
+    ListContentReportsResponse, ListConversationMembersRequest, ListConversationMembersResponse,
+    ListConversationMessagesRequest, ListConversationMessagesResponse, ListConversationsRequest,
+    ListConversationsResponse, ListGiftCatalogRequest, ListGiftCatalogResponse,
+    ListGiftRecordsRequest, ListGiftRecordsResponse, ListPointTransactionsRequest,
+    ListPointTransactionsResponse, ListRoomCategoriesRequest, ListRoomCategoriesResponse,
     ListRoomCreationReviewsRequest, ListRoomCreationReviewsResponse, ListRoomJoinReviewsRequest,
     ListRoomJoinReviewsResponse, ListRoomLabelsRequest, ListRoomLabelsResponse, ListRoomsRequest,
     ListRoomsResponse, ListUserRegistrationReviewsRequest, ListUserRegistrationReviewsResponse,
-    ListUsersRequest, ListUsersResponse, ModerateRoomChatUserRequest, ModerateRoomChatUserResponse,
-    PurgeSliceCacheRequest, PurgeSliceCacheResponse, RejectRoomCreationReviewRequest,
-    RejectRoomJoinReviewRequest, RejectUserRegistrationReviewRequest, RemoveAdminRequest,
-    RemoveAdminResponse, ResetRoomSettingsRequest, RestoreUserRequest, RestoreUserResponse, Room,
-    RoomCreationReview, RoomJoinReview, RuntimeSettingsSnapshot, SendTestEmailRequest,
-    SendTestEmailResponse, SetUserPasswordRequest, SetUserPasswordResponse, UnbanRoomRequest,
-    UnbanUserRequest, UpdateContentReportStatusRequest, UpdateContentReportStatusResponse,
-    UpdateMemberDisplayTagRequest, UpdateMemberPermissionsRequest, UpdateMemberRemarkNameRequest,
-    UpdateRoomPasswordRequest, UpdateRoomPasswordResponse, UpdateRoomSettingsRequest,
-    UpdateRoomTaxonomyRequest, UpdateSettingsRequest, UpdateUserPreferencesRequest,
-    UpdateUserPreferencesResponse, UpdateUserRoleRequest, UpdateUserUsernameRequest,
+    ListUsersRequest, ListUsersResponse, ListVodSourcesRequest, ListVodSourcesResponse,
+    ModerateRoomChatUserRequest, ModerateRoomChatUserResponse, PurgeSliceCacheRequest,
+    PurgeSliceCacheResponse, RejectRoomCreationReviewRequest, RejectRoomJoinReviewRequest,
+    RejectUserRegistrationReviewRequest, RemoveAdminRequest, RemoveAdminResponse,
+    ResetRoomSettingsRequest, RestoreUserRequest, RestoreUserResponse, Room, RoomCreationReview,
+    RoomJoinReview, RuntimeSettingsSnapshot, SendTestEmailRequest, SendTestEmailResponse,
+    SetUserPasswordRequest, SetUserPasswordResponse, UnbanRoomRequest, UnbanUserRequest,
+    UpdateContentReportStatusRequest, UpdateContentReportStatusResponse, UpdateGiftRequest,
+    UpdateGiftResponse, UpdateMemberDisplayTagRequest, UpdateMemberPermissionsRequest,
+    UpdateMemberRemarkNameRequest, UpdateRoomPasswordRequest, UpdateRoomPasswordResponse,
+    UpdateRoomSettingsRequest, UpdateRoomTaxonomyRequest, UpdateSettingsRequest,
+    UpdateUserPreferencesRequest, UpdateUserPreferencesResponse, UpdateUserRoleRequest,
+    UpdateUserUsernameRequest, UpdateVodSourceRequest, UpdateVodSourceResponse,
     UpsertRoomCategoryRequest, UpsertRoomLabelRequest, UserRegistrationReview,
 };
 use synctv_proto::client::{RoomCategory, RoomLabel};
@@ -1027,6 +1035,156 @@ impl AdminService for AdminServiceImpl {
             synctv_api_common::impls::validate_proto_request(&req)?;
             api.update_content_report_status(req, &validated.user_id, &ctx)
                 .await
+        })
+        .await
+    }
+
+    async fn get_check_in_config(
+        &self,
+        request: Request<synctv_proto::admin::GetCheckInConfigRequest>,
+    ) -> Result<Response<synctv_proto::admin::GetCheckInConfigResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _, req| async move {
+            api.get_check_in_config(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn update_check_in_config(
+        &self,
+        request: Request<synctv_proto::admin::UpdateCheckInConfigRequest>,
+    ) -> Result<Response<synctv_proto::admin::UpdateCheckInConfigResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _, req| async move {
+            api.update_check_in_config(req, &validated.user_id).await
+        })
+        .await
+    }
+    async fn list_gift_records(
+        &self,
+        request: Request<ListGiftRecordsRequest>,
+    ) -> Result<Response<ListGiftRecordsResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_gift_records(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn list_point_transactions(
+        &self,
+        request: Request<ListPointTransactionsRequest>,
+    ) -> Result<Response<ListPointTransactionsResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_point_transactions(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn list_conversations(
+        &self,
+        request: Request<ListConversationsRequest>,
+    ) -> Result<Response<ListConversationsResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_conversations(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn list_conversation_members(
+        &self,
+        request: Request<ListConversationMembersRequest>,
+    ) -> Result<Response<ListConversationMembersResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_conversation_members(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn list_conversation_messages(
+        &self,
+        request: Request<ListConversationMessagesRequest>,
+    ) -> Result<Response<ListConversationMessagesResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_conversation_messages(req, &validated.user_id)
+                .await
+        })
+        .await
+    }
+
+    async fn list_gift_catalog(
+        &self,
+        request: Request<ListGiftCatalogRequest>,
+    ) -> Result<Response<ListGiftCatalogResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_gift_catalog(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn create_gift(
+        &self,
+        request: Request<CreateGiftRequest>,
+    ) -> Result<Response<CreateGiftResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.create_gift(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn update_gift(
+        &self,
+        request: Request<UpdateGiftRequest>,
+    ) -> Result<Response<UpdateGiftResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.update_gift(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn list_vod_sources(
+        &self,
+        request: Request<ListVodSourcesRequest>,
+    ) -> Result<Response<ListVodSourcesResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.list_vod_sources(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn create_vod_source(
+        &self,
+        request: Request<CreateVodSourceRequest>,
+    ) -> Result<Response<CreateVodSourceResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.create_vod_source(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn update_vod_source(
+        &self,
+        request: Request<UpdateVodSourceRequest>,
+    ) -> Result<Response<UpdateVodSourceResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.update_vod_source(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn delete_vod_source(
+        &self,
+        request: Request<DeleteVodSourceRequest>,
+    ) -> Result<Response<DeleteVodSourceResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.delete_vod_source(req, &validated.user_id).await
+        })
+        .await
+    }
+
+    async fn delete_gift(
+        &self,
+        request: Request<DeleteGiftRequest>,
+    ) -> Result<Response<DeleteGiftResponse>, Status> {
+        self.execute_admin_rpc(request, move |api, validated, _ctx, req| async move {
+            api.delete_gift(req, &validated.user_id).await
         })
         .await
     }

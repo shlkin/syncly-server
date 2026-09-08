@@ -114,6 +114,7 @@ mod entries_outbox;
 pub use entries_outbox::RealtimeOutboxDeleteEntriesEventFactory;
 mod entries_request;
 use entries_request::{normalize_delete_entries_request, pending_delete_entries_plan};
+mod gift;
 mod guest_access;
 mod join;
 mod lifecycle;

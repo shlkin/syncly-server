@@ -16,20 +16,30 @@ use synctv_proto::client::{
     DeletePasskeyRequest, DeletePasskeyResponse, DeleteTotpRequest, DeleteTotpResponse,
     DiscoverRoomsRequest, DiscoverRoomsResponse, FavoriteRoomRequest, FavoriteRoomResponse,
     FinishPasskeyBindRequest, FinishSensitiveOperationVerificationRequest, FinishTotpSetupRequest,
-    GetRoomDiscoveryRequest, ListBlockedUsersRequest, ListBlockedUsersResponse,
-    ListFavoriteRoomsRequest, ListFavoriteRoomsResponse, ListMyRoomsResponse, ListPasskeysResponse,
-    PasskeyCredential, RequestSensitiveOperationEmailCodeRequest,
+    FollowUserRequest, FollowUserResponse, GetRoomDiscoveryRequest, GetUserProfileRequest,
+    GetUserProfileResponse, ListBlockedUsersRequest, ListBlockedUsersResponse,
+    ListFavoriteRoomsRequest, ListFavoriteRoomsResponse, ListFollowersRequest,
+    ListFollowersResponse, ListFollowingRequest, ListFollowingResponse, ListMyRoomsResponse,
+    ListPasskeysResponse, PasskeyCredential, RequestSensitiveOperationEmailCodeRequest,
     RequestSensitiveOperationEmailCodeResponse, RoomDiscoveryItem, RoomPathRequest,
     SensitiveOperationVerificationOutcome, StartPasskeyBindRequest, StartPasskeyBindResponse,
     StartSensitiveOperationPasskeyRequest, StartSensitiveOperationPasskeyResponse,
     StartSensitiveOperationVerificationRequest, StartTotpSetupRequest, StartTotpSetupResponse,
     TotpRecoveryCodesResponse, UnblockUserRequest, UnblockUserResponse, UnfavoriteRoomRequest,
-    UnfavoriteRoomResponse,
+    UnfavoriteRoomResponse, UnfollowUserRequest, UnfollowUserResponse, UpdateUserSignatureRequest,
+    UpdateUserSignatureResponse,
 };
 use synctv_proto::client::{
     CompleteUserAvatarUploadSessionRequest, CompleteUserAvatarUploadSessionResponse,
     CreateUserAvatarUploadSessionRequest, CreateUserAvatarUploadSessionResponse,
     UpdateUserAvatarRequest, User as UserAvatarUpdateResponse,
+};
+use synctv_proto::client::{
+    CompleteUserProfileBackgroundUploadSessionRequest,
+    CompleteUserProfileBackgroundUploadSessionResponse,
+    CreateUserProfileBackgroundUploadSessionRequest,
+    CreateUserProfileBackgroundUploadSessionResponse, UpdateUserProfileBackgroundRequest,
+    UpdateUserProfileBackgroundResponse,
 };
 use synctv_proto::client::{
     ConfirmEmailBindRequest, GetUserPreferencesResponse, RegenerateTotpRecoveryCodesRequest,
@@ -39,6 +49,9 @@ use synctv_proto::client::{
 use synctv_proto::client::{
     FinishOpaquePasswordUpdateRequest, StartOpaquePasswordUpdateRequest,
     StartOpaquePasswordUpdateResponse,
+};
+use synctv_proto::client::{
+    PrivacySettings, SearchUsersRequest, SearchUsersResponse, UpdatePrivacySettingsRequest,
 };
 use synctv_proto::client::{SetUsernameRequest, StartEmailBindRequest, StartEmailBindResponse};
 
@@ -92,6 +105,17 @@ pub struct UserAvatarObjectQuery {
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UserProfileBackgroundObjectPath {
+    pub encoded_object_key: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct UserProfileBackgroundObjectQuery {
+    pub token: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PasskeyCredentialPath {
     pub credential_id: String,
 }
@@ -99,6 +123,12 @@ pub struct PasskeyCredentialPath {
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockedUserPath {
+    pub user_id: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FollowedUserPath {
     pub user_id: String,
 }
 
@@ -229,6 +259,193 @@ pub async fn list_blocked_users(
             &request_meta.0,
             EndpointRateLimitCategory::Read,
             |auth| async move { client_api.list_blocked_users(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// Read a public profile. Omit `userId` for the caller's own page.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/user/profile",
+        tag = "User",
+        params(GetUserProfileRequest),
+        responses((status = 200, description = "User profile", body = GetUserProfileResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn get_user_profile(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<GetUserProfileRequest>,
+) -> AppResult<Json<GetUserProfileResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Read,
+            |auth| async move { client_api.get_user_profile(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// Replace the caller's public signature. An empty value clears it.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        put,
+        path = "/api/user/signature",
+        tag = "User",
+        request_body = UpdateUserSignatureRequest,
+        responses((status = 200, description = "Signature stored", body = UpdateUserSignatureResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn update_user_signature(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<UpdateUserSignatureRequest>,
+) -> AppResult<Json<UpdateUserSignatureResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Write,
+            |auth| async move { client_api.update_user_signature(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        post,
+        path = "/api/user/following",
+        tag = "User",
+        request_body = FollowUserRequest,
+        responses((status = 200, description = "User followed", body = FollowUserResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn follow_user(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<FollowUserRequest>,
+) -> AppResult<Json<FollowUserResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Write,
+            |auth| async move { client_api.follow_user(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        delete,
+        path = "/api/user/following/{userId}",
+        tag = "User",
+        params(("userId" = String, Path, description = "Public user ID")),
+        responses((status = 200, description = "User unfollowed", body = UnfollowUserResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn unfollow_user(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<FollowedUserPath>,
+) -> AppResult<Json<UnfollowUserResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Write,
+            |auth| async move {
+                client_api
+                    .unfollow_user(
+                        &auth.user_id(),
+                        UnfollowUserRequest {
+                            user_id: path.user_id,
+                        },
+                    )
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// Accounts the subject follows. Omit `userId` for the caller's own list.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/user/following",
+        tag = "User",
+        params(ListFollowingRequest),
+        responses((status = 200, description = "Followed accounts", body = ListFollowingResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn list_following(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<ListFollowingRequest>,
+) -> AppResult<Json<ListFollowingResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Read,
+            |auth| async move { client_api.list_following(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// Accounts that follow the subject. Omit `userId` for the caller's own list.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/user/followers",
+        tag = "User",
+        params(ListFollowersRequest),
+        responses((status = 200, description = "Followers", body = ListFollowersResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn list_followers(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<ListFollowersRequest>,
+) -> AppResult<Json<ListFollowersResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Read,
+            |auth| async move { client_api.list_followers(&auth.user_id(), req).await },
         )
         .await
         .map_err(super::error::map_api_error)?;
@@ -464,6 +681,184 @@ pub async fn clear_user_avatar(
         .map_err(super::error::map_api_error)?;
 
     Ok(Json(response))
+}
+
+pub async fn create_user_profile_background_upload_session(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<CreateUserProfileBackgroundUploadSessionRequest>,
+) -> AppResult<Json<CreateUserProfileBackgroundUploadSessionResponse>> {
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Write,
+            |auth| async move {
+                client_api
+                    .create_user_profile_background_upload_session(&auth.user_id(), req)
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+
+    Ok(Json(response))
+}
+
+pub async fn update_user_profile_background(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<UpdateUserProfileBackgroundRequest>,
+) -> AppResult<Json<UpdateUserProfileBackgroundResponse>> {
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Write,
+            |auth| async move {
+                client_api
+                    .update_user_profile_background(&auth.user_id(), req)
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+
+    Ok(Json(response))
+}
+
+pub async fn clear_user_profile_background(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+) -> AppResult<Json<UpdateUserProfileBackgroundResponse>> {
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Write,
+            |auth| async move {
+                client_api
+                    .clear_user_profile_background(&auth.user_id())
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+
+    Ok(Json(response))
+}
+
+pub async fn upload_user_profile_background_object(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<UserProfileBackgroundObjectPath>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AppResult<Response> {
+    let upload_token = super::required_header_str(
+        &headers,
+        synctv_core::service::FILE_UPLOAD_TOKEN_HEADER,
+        "Missing file upload token",
+    )?;
+    let content_type = super::optional_header_str(&headers, &header::CONTENT_TYPE)?;
+    let range = super::optional_content_range(&headers)?;
+    let req = synctv_proto::client::UploadUserProfileBackgroundObjectRequest {
+        encoded_object_key: path.encoded_object_key,
+        token: upload_token.to_string(),
+        content_type: content_type.map(str::to_string),
+        content_range: range.map(file_upload_range_to_proto),
+        data: body,
+    };
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_public_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Write,
+            move || async move { client_api.upload_user_profile_background_object(req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok((
+        upload_response_headers(
+            response.complete,
+            response.uploaded_size_bytes,
+            &response.uploaded_parts,
+        ),
+        StatusCode::NO_CONTENT,
+    )
+        .into_response())
+}
+
+pub async fn complete_user_profile_background_upload_session(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<UserProfileBackgroundObjectPath>,
+    Json(mut req): Json<CompleteUserProfileBackgroundUploadSessionRequest>,
+) -> AppResult<Json<CompleteUserProfileBackgroundUploadSessionResponse>> {
+    req.encoded_object_key = path.encoded_object_key;
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_public_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Write,
+            move || async move {
+                client_api
+                    .complete_user_profile_background_upload_session(req)
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+pub async fn get_user_profile_background_object(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Path(path): Path<UserProfileBackgroundObjectPath>,
+    headers: HeaderMap,
+    axum::extract::Query(query): axum::extract::Query<UserProfileBackgroundObjectQuery>,
+) -> AppResult<Response> {
+    let range = super::optional_file_range(&headers)?;
+    let req = synctv_proto::client::GetUserProfileBackgroundObjectRequest {
+        encoded_object_key: path.encoded_object_key,
+        token: query.token,
+        range: range.map(super::file_range_request_to_proto),
+    };
+    let request_meta = request_meta
+        .0
+        .with_timeout(Some(synctv_core::resilience::timeout::HTTP_REQUEST_TIMEOUT));
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let download = executor
+        .execute_public_endpoint(
+            &request_meta,
+            EndpointRateLimitCategory::Read,
+            move || async move { client_api.get_user_profile_background_object(req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    super::file_object_download_response(download, None)
 }
 
 pub async fn upload_user_avatar_object(
@@ -1518,4 +1913,99 @@ mod tests {
         assert_eq!(req.upload_id.as_deref(), Some("upload-1"));
         Ok(())
     }
+}
+
+/// Finds accounts by username.
+///
+/// Signed-in only, and only accounts that left discovery on: this is the one
+/// route in the API that hands out an account someone has not already met.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/user/search",
+        tag = "User",
+        params(SearchUsersRequest),
+        responses((status = 200, description = "Discoverable accounts matching the query", body = SearchUsersResponse)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn search_users(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    ProtoQuery(req): ProtoQuery<SearchUsersRequest>,
+) -> AppResult<Json<SearchUsersResponse>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Read,
+            |auth| async move { client_api.search_users(&auth.user_id(), req).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// The caller's privacy switches.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        get,
+        path = "/api/user/privacy",
+        tag = "User",
+        responses((status = 200, description = "Privacy switches", body = PrivacySettings)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn get_privacy_settings(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+) -> AppResult<Json<PrivacySettings>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Read,
+            |auth| async move { client_api.get_privacy_settings(&auth.user_id()).await },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
+}
+
+/// Flips one or more privacy switches. Omitted fields are left as they are.
+#[cfg_attr(
+    feature = "openapi",
+    utoipa::path(
+        patch,
+        path = "/api/user/privacy",
+        tag = "User",
+        request_body = UpdatePrivacySettingsRequest,
+        responses((status = 200, description = "Privacy switches after the change", body = PrivacySettings)),
+        security(("bearer_auth" = []))
+    )
+)]
+pub async fn update_privacy_settings(
+    request_meta: RequestMetadata,
+    State(state): State<AppState>,
+    Json(req): Json<UpdatePrivacySettingsRequest>,
+) -> AppResult<Json<PrivacySettings>> {
+    let executor = state.shared_api_runtime.client_api.clone();
+    let client_api = state.shared_api_runtime.client_api.clone();
+    let response = executor
+        .execute_user_endpoint(
+            &request_meta.0,
+            EndpointRateLimitCategory::Write,
+            |auth| async move {
+                client_api
+                    .update_privacy_settings(&auth.user_id(), req)
+                    .await
+            },
+        )
+        .await
+        .map_err(super::error::map_api_error)?;
+    Ok(Json(response))
 }

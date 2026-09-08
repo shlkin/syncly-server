@@ -44,6 +44,10 @@ pub const PLAYLIST_NAME_MAX: usize = 255;
 /// Maximum playlist description length enforced by the domain/service layer.
 pub const PLAYLIST_DESCRIPTION_MAX: usize = 5000;
 
+/// Maximum length of the public profile signature. Matches the
+/// `user_profile_details.signature` column width.
+pub const USER_SIGNATURE_MAX: usize = 200;
+
 // Reserved usernames — prevent phishing/impersonation attacks
 
 /// Reserved usernames that cannot be used to prevent phishing/impersonation.
@@ -173,6 +177,34 @@ pub fn validate_media_name(name: &str) -> ValidationResult<()> {
         return Err(ValidationError::Field {
             field: "media_name".to_string(),
             message: format!("must be at most {MEDIA_NAME_MAX} characters"),
+        });
+    }
+
+    Ok(())
+}
+
+/// Sanitizes and length-checks a public profile signature.
+///
+/// An empty result is legitimate: it means "no signature", which is how an
+/// account clears the field.
+pub fn validate_user_signature_input(signature: &str) -> ValidationResult<String> {
+    let sanitized = sanitize_string(signature);
+    validate_user_signature(&sanitized)
+        .map_err(|error| input_field_error("user_signature", &error))?;
+
+    if contains_html_markup(&sanitized) {
+        return Err(ValidationError::SecurityRisk);
+    }
+
+    Ok(sanitized.into_owned())
+}
+
+pub fn validate_user_signature(signature: &str) -> ValidationResult<()> {
+    let char_count = signature.chars().count();
+    if char_count > USER_SIGNATURE_MAX {
+        return Err(ValidationError::Field {
+            field: "user_signature".to_string(),
+            message: format!("must be at most {USER_SIGNATURE_MAX} characters"),
         });
     }
 

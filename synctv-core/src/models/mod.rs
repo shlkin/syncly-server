@@ -85,9 +85,13 @@ macro_rules! i16_enum {
 
 pub mod audit;
 pub mod chat;
+pub mod check_in;
 pub mod content_report;
+pub mod couple;
+pub mod couple_nest;
 pub mod email_token;
 pub mod file_storage;
+pub mod gift;
 pub mod id;
 pub mod lifecycle;
 pub mod media;
@@ -109,32 +113,52 @@ pub mod room;
 pub mod room_member;
 pub mod room_settings;
 pub mod settings;
+pub mod social;
 pub mod source_config;
 pub mod user;
 pub mod user_preferences;
 pub mod validation;
+pub mod vod_source;
+pub mod watch_history;
 
 pub use audit::{AuditAction, AuditDetails, AuditTargetType, AuditUpdatedFields};
 pub use chat::{
-    ChatAttachment, ChatAttachmentKind, ChatEventKind, ChatHistoryCursor, ChatHistoryPage,
-    ChatMemberJoinedMetadata, ChatMention, ChatMentionInput, ChatMessage, ChatMessageContext,
-    ChatMessageEvent, ChatMessageEventLog, ChatMessageOperationKind, ChatMessagePin,
-    ChatMessageReadReceiptMember, ChatMessageReadReceiptUser, ChatMessageReadReceiptsPage,
-    ChatMessageSelection, ChatMessageStatus, ChatMessageType, ChatMessageWithAttachments,
-    ChatMetadata, ChatPinEvent, ChatPinEventKind, ChatPinEventLog, ChatPinnedMessage,
-    ChatPlaybackChangedMetadata, ChatPlaybackMessagesQuery, ChatPlaybackMetadata,
-    ChatPresentationMetadata, ChatReactionSummary, ChatReactionUser, ChatReactionUsersCursor,
-    ChatReactionUsersPage, ChatReadState, ChatReadStateWithUnread, ChatSearchMessagesPage,
-    ChatSearchMessagesQuery, ChatUserMetadata, CreateChatAttachmentUploadSession,
-    DeleteChatMessage, EditChatMessage, EventCursor, MarkChatRead, PinChatMessage,
-    PlaybackChangeReason, SendChatMessage, SetChatReaction, UnpinChatMessage,
-    CHAT_ATTACHMENT_FILENAME_MAX_CHARS, CHAT_ATTACHMENT_ID_MAX_CHARS,
+    ChatAttachment, ChatAttachmentKind, ChatEventKind, ChatGiftMetadata, ChatHistoryCursor,
+    ChatHistoryPage, ChatMemberJoinedMetadata, ChatMention, ChatMentionInput, ChatMessage,
+    ChatMessageContext, ChatMessageEvent, ChatMessageEventLog, ChatMessageOperationKind,
+    ChatMessagePin, ChatMessageReadReceiptMember, ChatMessageReadReceiptUser,
+    ChatMessageReadReceiptsPage, ChatMessageSelection, ChatMessageStatus, ChatMessageType,
+    ChatMessageWithAttachments, ChatMetadata, ChatPinEvent, ChatPinEventKind, ChatPinEventLog,
+    ChatPinnedMessage, ChatPlaybackChangedMetadata, ChatPlaybackMessagesQuery,
+    ChatPlaybackMetadata, ChatPresentationMetadata, ChatReactionSummary, ChatReactionUser,
+    ChatReactionUsersCursor, ChatReactionUsersPage, ChatReadState, ChatReadStateWithUnread,
+    ChatSearchMessagesPage, ChatSearchMessagesQuery, ChatUserMetadata,
+    CreateChatAttachmentUploadSession, DeleteChatMessage, EditChatMessage, EventCursor,
+    MarkChatRead, PinChatMessage, PlaybackChangeReason, SendChatMessage, SetChatReaction,
+    UnpinChatMessage, CHAT_ATTACHMENT_FILENAME_MAX_CHARS, CHAT_ATTACHMENT_ID_MAX_CHARS,
     CHAT_CLIENT_MESSAGE_ID_MAX_CHARS, CHAT_CLIENT_OPERATION_ID_MAX_CHARS, CHAT_EVENT_ID_MAX_CHARS,
     CHAT_EVENT_TYPE_MAX_CHARS, CHAT_PIN_NOTE_MAX_CHARS, CHAT_REACTION_KEY_MAX_CHARS,
+};
+pub use check_in::{
+    CheckInAwardMode, CheckInConfig, CheckInConfigUpdate, CheckInResult, CheckInStatus,
+    PointTransaction, CHECK_IN_DAY_BOUNDARY_MAX_MINUTES, CHECK_IN_DAY_BOUNDARY_MIN_MINUTES,
+    CHECK_IN_POINTS_MAX, POINT_REASON_CHECK_IN,
 };
 pub use content_report::{
     ContentReport, ContentReportAdminRow, ContentReportMetadata, ContentReportStatus,
     ContentReportTarget, ContentReportTargetType, CreateContentReport,
+};
+pub use couple::{
+    CoupleFavorite, CoupleSpace, CoupleSpaceStatus, CoupleSpaceView, NewCoupleFavorite,
+    SharedWatchEntry, COUPLE_FAVORITE_NOTE_MAX_CHARS, COUPLE_INVITE_MESSAGE_MAX_CHARS,
+    COUPLE_SPACE_TITLE_MAX_CHARS,
+};
+pub use couple_nest::{
+    CoupleAiKind, CoupleAiWork, CoupleAlbum, CoupleAnniversary, CoupleAnniversaryUpdate,
+    CoupleMedia, CoupleMediaKind, CoupleMediaScope, CoupleMemory, CoupleMemoryUpdate,
+    CoupleNestHome, CouplePet, CouplePetAction, CouplePetCheckinDay, CouplePetUpdate,
+    CouplePetView, CoupleTodo, CoupleTodoUpdate, NewCoupleAiWork, NewCoupleAnniversary,
+    NewCoupleMedia, NewCoupleMemory, NewCoupleTodo,
 };
 pub use email_token::EmailTokenType;
 pub use file_storage::{
@@ -151,6 +175,12 @@ pub use file_storage::{
     SubmittedFileReference, SubmittedFileReferenceKind, FILE_CLEANUP_ORIGIN_MAX_CHARS,
     FILE_ID_MAX_CHARS, FILE_OBJECT_KEY_MAX_CHARS, FILE_REFERENCE_ID_MAX_CHARS,
     FILE_REFERENCE_KIND_MAX_CHARS, FILE_SHA256_HEX_CHARS, FILE_STORAGE_BACKEND_MAX_CHARS,
+};
+pub use gift::{
+    Gift, GiftRecord, GiftRecordDirection, GiftRecordView, GiftStats, GiftUpdate, NewGift,
+    SendGift, SendGiftResult, GIFT_DESCRIPTION_MAX_CHARS, GIFT_ICON_MAX_CHARS, GIFT_KEY_MAX_CHARS,
+    GIFT_MESSAGE_MAX_CHARS, GIFT_NAME_MAX_CHARS, GIFT_PRICE_MAX, GIFT_QUANTITY_MAX,
+    GIFT_REQUEST_ID_MAX_CHARS, POINT_REASON_GIFT_RECEIVE, POINT_REASON_GIFT_SEND,
 };
 pub use id::{
     generate_id, BanRecordId, ContentReportId, EmailRegistrationTokenId, MediaId, PlaylistId,
@@ -252,6 +282,13 @@ pub use room_member::{
 };
 pub use room_settings::RoomSettings;
 pub use settings::RuntimeSetting;
+pub use social::{
+    AcceptedFriendRequest, AdminConversationOverview, ConversationKind, ConversationMember,
+    ConversationMemberRole, ConversationSummary, Friend, FriendRequest, FriendRequestDirection,
+    FriendRequestOutcome, FriendRequestStatus, NewGroupConversation, SocialMessage,
+    SocialMessageKind, SocialUnreadSummary, CONVERSATION_MEMBER_MAX, CONVERSATION_TITLE_MAX_CHARS,
+    FRIEND_REQUEST_MESSAGE_MAX_CHARS, SOCIAL_MESSAGE_BODY_MAX_CHARS,
+};
 pub use source_config::{
     detect_direct_url_format, AcFunMediaSourceConfig, AlistMediaSourceConfig,
     AlistPlaylistSourceConfig, BilibiliHistoryType, BilibiliLiveSourceConfig,
@@ -275,13 +312,18 @@ pub use source_config::{
     YoutubePlaylistSourceConfig,
 };
 pub use user::{
-    BlockedUser, SignupMethod, User, UserLifecycleMetadata, UserListQuery, UserListSortBy,
-    UserRole, UserStatus,
+    BlockedUser, FollowedUser, SignupMethod, User, UserLifecycleMetadata, UserListQuery,
+    UserListSortBy, UserProfile, UserRole, UserStatus,
 };
 pub use user_preferences::{
     UserAuthFactors, UserNotificationPreferences, UserPreferences, UserPreferencesUpdate,
 };
 pub use validation::SettingsValidationContext;
+pub use vod_source::{NewVodSource, VodSource, VodSourceFormat, VodSourceUpdate};
+pub use watch_history::{
+    MediaFavorite, NewMediaFavorite, RecordWatchHistory, WatchHistoryEntry,
+    WATCH_ENTRY_COVER_URL_MAX_CHARS, WATCH_ENTRY_SOURCE_KEY_MAX_CHARS, WATCH_ENTRY_TITLE_MAX_CHARS,
+};
 
 #[cfg(test)]
 mod tests {

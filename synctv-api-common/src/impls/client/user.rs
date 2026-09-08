@@ -29,6 +29,10 @@ use super::media::{file_upload_reference_to_proto, required_file_upload_referenc
 use super::ClientApiImpl;
 
 const USER_ROOM_DELETION_PAGE_SIZE: u32 = 100;
+/// Page size the follow listings use when the client does not ask for one.
+const FOLLOW_LIST_DEFAULT_PAGE_SIZE: u32 = 50;
+/// Ceiling the follow listings clamp to, matching the proto CEL rule.
+const FOLLOW_LIST_MAX_PAGE_SIZE: u32 = 100;
 
 fn sensitive_method_to_proto(method: AuthFactorMethod) -> i32 {
     match method {
@@ -173,6 +177,84 @@ fn avatar_upload_session_to_proto(
         upload_token: fields.upload_token,
         encoded_object_key: session.encoded_object_key,
     })
+}
+
+fn profile_background_upload_session_to_proto(
+    session: FileUploadSession,
+) -> Result<synctv_proto::client::UserProfileBackgroundUploadSession, ApiError> {
+    let fields = upload_session_fields(&session)?;
+    Ok(synctv_proto::client::UserProfileBackgroundUploadSession {
+        background_reference: Some(file_upload_reference_to_proto(&session.file)?),
+        upload_required: session.upload_required,
+        upload_url: fields.upload_url,
+        upload_object_access: fields.upload_object_access,
+        upload_method: fields.upload_method,
+        upload_headers: session.upload_headers.into_iter().collect(),
+        expires_at: fields.expires_at,
+        max_size_bytes: session.max_size_bytes,
+        ownership_proof_required: session.ownership_proof_required,
+        ownership_proof_nonce: fields.ownership_proof_nonce,
+        ownership_proof_ranges: session
+            .ownership_proof_ranges
+            .into_iter()
+            .map(
+                |range| synctv_proto::client::UserProfileBackgroundOwnershipProofRange {
+                    offset: range.offset,
+                    length: range.length,
+                },
+            )
+            .collect(),
+        resumable: session.resumable,
+        part_size_bytes: session.part_size_bytes,
+        uploaded_size_bytes: session.uploaded_size_bytes,
+        uploaded_parts: session.uploaded_parts,
+        upload_id: session.upload_id,
+        part_urls: session
+            .part_urls
+            .into_iter()
+            .map(|part_url| synctv_proto::client::FileUploadPartUrl {
+                part_number: part_url.part_number,
+                offset_bytes: part_url.offset_bytes,
+                size_bytes: part_url.size_bytes,
+                upload_url: part_url.upload_url,
+                upload_method: part_url.upload_method,
+                upload_headers: part_url.upload_headers.into_iter().collect(),
+                expires_at: part_url.expires_at.map(|expires_at| expires_at.timestamp()),
+            })
+            .collect(),
+        upload_token: fields.upload_token,
+        encoded_object_key: session.encoded_object_key,
+    })
+}
+
+fn profile_background_upload_create_result_to_proto(
+    result: synctv_core::models::FileUploadSessionCreateResult,
+) -> Result<synctv_proto::client::CreateUserProfileBackgroundUploadSessionResponse, ApiError> {
+    use synctv_proto::client::create_user_profile_background_upload_session_response::Result as ProtoResult;
+    Ok(
+        synctv_proto::client::CreateUserProfileBackgroundUploadSessionResponse {
+            result: Some(match result {
+                synctv_core::models::FileUploadSessionCreateResult::Plan(plan) => {
+                    ProtoResult::Plan(super::media::file_upload_plan_to_proto(plan))
+                }
+                synctv_core::models::FileUploadSessionCreateResult::Session(session) => {
+                    ProtoResult::Session(profile_background_upload_session_to_proto(session)?)
+                }
+            }),
+        },
+    )
+}
+
+fn profile_background_object_to_proto(
+    blob: FileBlob,
+) -> synctv_proto::client::UserProfileBackgroundObjectResponse {
+    synctv_proto::client::UserProfileBackgroundObjectResponse {
+        mime_type: blob.mime_type,
+        content_manifest_sha256: blob.content_manifest_sha256,
+        data: blob.data,
+        content_range: blob.range.map(file_byte_range_to_proto),
+        total_size_bytes: blob.total_size_bytes,
+    }
 }
 
 fn avatar_upload_create_result_to_proto(
@@ -508,6 +590,355 @@ impl ClientApiImpl {
                 ApiError::Internal("blocked user total exceeds i32::MAX".to_string())
             })?,
         })
+    }
+
+    /// Reads a public profile. An empty `user_id` means the caller's own page,
+    /// so a client can ask for it without knowing its own public id.
+    pub async fn get_user_profile(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::GetUserProfileRequest,
+    ) -> Result<synctv_proto::client::GetUserProfileResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let subject_user_id = self.resolve_follow_subject(user_id, &req.user_id)?;
+        let profile = self
+            .user_service
+            .user_profile(&subject_user_id, Some(user_id))
+            .await
+            .map_err(ApiError::from)?;
+        let public_user = self
+            .user_public_view_with_loaded_avatar(&profile.user)
+            .await?;
+
+        let (background_url, background_access) = self
+            .profile_background_fields(profile.background_file_reference_id)
+            .await?;
+
+        Ok(synctv_proto::client::GetUserProfileResponse {
+            profile: Some(synctv_proto::client::UserProfile {
+                user: Some(public_user),
+                signature: profile.signature,
+                following_count: profile.following_count,
+                follower_count: profile.follower_count,
+                viewer_following: profile.viewer_following,
+                following_viewer: profile.following_viewer,
+                background_url,
+                background_access,
+                show_following: profile.show_following,
+                show_followers: profile.show_followers,
+            }),
+        })
+    }
+
+    /// The URL and read grant for a stored profile background, or an empty pair
+    /// when the account is on the default backdrop.
+    async fn profile_background_fields(
+        &self,
+        background_file_reference_id: Option<i64>,
+    ) -> Result<(String, Option<synctv_proto::client::FileObjectAccess>), ApiError> {
+        let Some(file) = self
+            .load_stored_file_reference(background_file_reference_id)
+            .await?
+        else {
+            return Ok((String::new(), None));
+        };
+        let access = self.stored_file_reference_access(
+            &file,
+            &synctv_core::service::user_profile_background_upload_policy(),
+        )?;
+        let object = crate::impls::client::convert::stored_file_reference_to_media_cover(
+            &file,
+            access.as_ref(),
+        )?;
+        Ok((object.url, object.object_access))
+    }
+
+    pub async fn create_user_profile_background_upload_session(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::CreateUserProfileBackgroundUploadSessionRequest,
+    ) -> Result<synctv_proto::client::CreateUserProfileBackgroundUploadSessionResponse, ApiError>
+    {
+        let metadata = file_metadata_from_proto(req.metadata.as_ref())?;
+        let session = self
+            .user_service
+            .create_profile_background_upload_session(
+                user_id,
+                synctv_core::service::CreateUserProfileBackgroundUploadSession {
+                    client_background_id: (!req.client_background_id.trim().is_empty())
+                        .then_some(req.client_background_id),
+                    mime_type: req.mime_type,
+                    size_bytes: req.size_bytes,
+                    width: (req.width > 0).then_some(req.width),
+                    height: (req.height > 0).then_some(req.height),
+                    parts: proto_upload_manifest_parts(req.parts),
+                    metadata,
+                },
+            )
+            .await
+            .map_err(ApiError::from)?;
+        profile_background_upload_create_result_to_proto(session)
+    }
+
+    pub async fn upload_user_profile_background_object(
+        &self,
+        req: synctv_proto::client::UploadUserProfileBackgroundObjectRequest,
+    ) -> Result<synctv_proto::client::UploadUserProfileBackgroundObjectResponse, ApiError> {
+        let blob = self
+            .user_service
+            .store_profile_background_upload_object(
+                &req.encoded_object_key,
+                &req.token,
+                req.content_type.as_deref(),
+                proto_file_upload_range(req.content_range),
+                req.data,
+            )
+            .await
+            .map_err(ApiError::from)?;
+        let (complete, uploaded_size_bytes, uploaded_parts) = uploaded_parts_response_fields(&blob);
+        Ok(
+            synctv_proto::client::UploadUserProfileBackgroundObjectResponse {
+                object: match blob {
+                    StoreFileUploadResult::Complete(blob) => {
+                        Some(profile_background_object_to_proto(blob))
+                    }
+                    StoreFileUploadResult::PartAccepted { .. } => None,
+                },
+                complete,
+                uploaded_size_bytes,
+                uploaded_parts,
+            },
+        )
+    }
+
+    pub async fn complete_user_profile_background_upload_session(
+        &self,
+        req: synctv_proto::client::CompleteUserProfileBackgroundUploadSessionRequest,
+    ) -> Result<synctv_proto::client::CompleteUserProfileBackgroundUploadSessionResponse, ApiError>
+    {
+        let result = self
+            .user_service
+            .complete_profile_background_upload_session(complete_upload_session_request(
+                &req.file_id,
+                req.encoded_object_key,
+                req.token,
+                req.upload_id,
+                &req.ownership_proof,
+                req.parts,
+            ))
+            .await
+            .map_err(ApiError::from)?;
+        let (complete, uploaded_size_bytes, uploaded_parts) =
+            complete_upload_response_fields(&result);
+        Ok(
+            synctv_proto::client::CompleteUserProfileBackgroundUploadSessionResponse {
+                object: result.object.map(profile_background_object_to_proto),
+                complete,
+                uploaded_size_bytes,
+                uploaded_parts,
+            },
+        )
+    }
+
+    pub async fn get_user_profile_background_object(
+        &self,
+        req: synctv_proto::client::GetUserProfileBackgroundObjectRequest,
+    ) -> Result<synctv_core::models::FileObjectDownload, ApiError> {
+        self.user_service
+            .get_profile_background_object_stream(
+                &req.encoded_object_key,
+                &req.token,
+                proto_file_range_request(req.range),
+            )
+            .await
+            .map_err(ApiError::from)
+    }
+
+    pub async fn update_user_profile_background(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::UpdateUserProfileBackgroundRequest,
+    ) -> Result<synctv_proto::client::UpdateUserProfileBackgroundResponse, ApiError> {
+        let background =
+            required_file_upload_reference(req.background_reference, "background_reference")?;
+        let reference_id = self
+            .user_service
+            .update_profile_background(user_id, background)
+            .await
+            .map_err(ApiError::from)?;
+        let (background_url, background_access) =
+            self.profile_background_fields(Some(reference_id)).await?;
+        Ok(synctv_proto::client::UpdateUserProfileBackgroundResponse {
+            background_url,
+            background_access,
+        })
+    }
+
+    pub async fn clear_user_profile_background(
+        &self,
+        user_id: &UserId,
+    ) -> Result<synctv_proto::client::UpdateUserProfileBackgroundResponse, ApiError> {
+        self.user_service
+            .clear_profile_background(user_id)
+            .await
+            .map_err(ApiError::from)?;
+        Ok(synctv_proto::client::UpdateUserProfileBackgroundResponse::default())
+    }
+
+    pub async fn update_user_signature(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::UpdateUserSignatureRequest,
+    ) -> Result<synctv_proto::client::UpdateUserSignatureResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let signature = self
+            .user_service
+            .update_user_signature(user_id, &req.signature)
+            .await
+            .map_err(ApiError::from)?;
+        Ok(synctv_proto::client::UpdateUserSignatureResponse { signature })
+    }
+
+    pub async fn follow_user(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::FollowUserRequest,
+    ) -> Result<synctv_proto::client::FollowUserResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let followee_user_id =
+            crate::impls::proto_validated_user_id(req.user_id, &self.public_id_codec)?;
+        let followed_at = self
+            .user_service
+            .follow_user(user_id, &followee_user_id)
+            .await
+            .map_err(ApiError::from)?;
+        // The call above settled one direction. Whether the pair is mutual is
+        // whatever the target had already done, so it needs its own read.
+        let mutual = self
+            .user_service
+            .is_following(&followee_user_id, user_id)
+            .await
+            .map_err(ApiError::from)?;
+        let followee = self
+            .user_service
+            .get_user(&followee_user_id)
+            .await
+            .map_err(ApiError::from)?;
+        let public_user = self.user_public_view_with_loaded_avatar(&followee).await?;
+
+        Ok(synctv_proto::client::FollowUserResponse {
+            followed_user: Some(synctv_proto::client::FollowedUser {
+                user: Some(public_user),
+                followed_at: followed_at.timestamp(),
+                mutual,
+            }),
+        })
+    }
+
+    pub async fn unfollow_user(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::UnfollowUserRequest,
+    ) -> Result<synctv_proto::client::UnfollowUserResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let followee_user_id =
+            crate::impls::proto_validated_user_id(req.user_id, &self.public_id_codec)?;
+        self.user_service
+            .unfollow_user(user_id, &followee_user_id)
+            .await
+            .map_err(ApiError::from)?;
+        Ok(synctv_proto::client::UnfollowUserResponse { success: true })
+    }
+
+    pub async fn list_following(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::ListFollowingRequest,
+    ) -> Result<synctv_proto::client::ListFollowingResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let subject_user_id = self.resolve_follow_subject(user_id, &req.user_id)?;
+        self.require_follow_list_visible(user_id, &subject_user_id, FollowListSide::Following)
+            .await?;
+        let pagination = crate::impls::proto_page_params(
+            req.page,
+            req.page_size,
+            FOLLOW_LIST_DEFAULT_PAGE_SIZE,
+            FOLLOW_LIST_MAX_PAGE_SIZE,
+        );
+        let search = (!req.search.is_empty()).then_some(req.search);
+        let (page, total) = self
+            .user_service
+            .list_following(&subject_user_id, pagination, search.as_deref())
+            .await
+            .map_err(ApiError::from)?;
+        let (users, total) = self.followed_users_to_proto(page, total).await?;
+
+        Ok(synctv_proto::client::ListFollowingResponse { users, total })
+    }
+
+    pub async fn list_followers(
+        &self,
+        user_id: &UserId,
+        req: synctv_proto::client::ListFollowersRequest,
+    ) -> Result<synctv_proto::client::ListFollowersResponse, ApiError> {
+        crate::impls::validate_proto_request(&req)?;
+        let subject_user_id = self.resolve_follow_subject(user_id, &req.user_id)?;
+        self.require_follow_list_visible(user_id, &subject_user_id, FollowListSide::Followers)
+            .await?;
+        let pagination = crate::impls::proto_page_params(
+            req.page,
+            req.page_size,
+            FOLLOW_LIST_DEFAULT_PAGE_SIZE,
+            FOLLOW_LIST_MAX_PAGE_SIZE,
+        );
+        let search = (!req.search.is_empty()).then_some(req.search);
+        let (page, total) = self
+            .user_service
+            .list_followers(&subject_user_id, pagination, search.as_deref())
+            .await
+            .map_err(ApiError::from)?;
+        let (users, total) = self.followed_users_to_proto(page, total).await?;
+
+        Ok(synctv_proto::client::ListFollowersResponse { users, total })
+    }
+
+    /// Resolves the subject of a profile or follow listing. An empty id is the
+    /// caller itself, which keeps "my followers" from needing a second round trip
+    /// to learn the caller's own public id.
+    fn resolve_follow_subject(&self, caller: &UserId, requested: &str) -> Result<UserId, ApiError> {
+        if requested.is_empty() {
+            return Ok(*caller);
+        }
+        crate::impls::proto_validated_user_id(requested, &self.public_id_codec)
+    }
+
+    /// Shared tail of the two follow listings: one batched avatar load for the
+    /// page, then the total narrowed to the wire type.
+    async fn followed_users_to_proto(
+        &self,
+        page: Vec<synctv_core::models::FollowedUser>,
+        total: i64,
+    ) -> Result<(Vec<synctv_proto::client::FollowedUser>, i32), ApiError> {
+        let users = page
+            .iter()
+            .map(|followed| followed.user.clone())
+            .collect::<Vec<_>>();
+        let public_users = self
+            .batch_user_public_views_with_loaded_avatars(&users)
+            .await?;
+        let users = page
+            .into_iter()
+            .zip(public_users)
+            .map(|(followed, user)| synctv_proto::client::FollowedUser {
+                user: Some(user),
+                followed_at: followed.followed_at.timestamp(),
+                mutual: followed.mutual,
+            })
+            .collect();
+        let total = i32::try_from(total)
+            .map_err(|_| ApiError::Internal("follow total exceeds i32::MAX".to_string()))?;
+
+        Ok((users, total))
     }
 
     pub async fn get_user_preferences(
@@ -1214,5 +1645,47 @@ mod tests {
             outcome.outcome,
             Some(Outcome::VerificationId("verification-id".to_string()))
         );
+    }
+}
+
+/// Which of the two follow lists a visibility check is about.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FollowListSide {
+    Following,
+    Followers,
+}
+
+impl ClientApiImpl {
+    /// Refuses to list a follow graph its owner has closed.
+    ///
+    /// An owner always reads their own lists — the switch hides them from other
+    /// people, not from the person who set it. The counts stay public either
+    /// way, because a profile that reported zero followers would be lying rather
+    /// than declining to answer.
+    async fn require_follow_list_visible(
+        &self,
+        viewer_user_id: &UserId,
+        subject_user_id: &UserId,
+        side: FollowListSide,
+    ) -> Result<(), ApiError> {
+        if viewer_user_id == subject_user_id {
+            return Ok(());
+        }
+        let settings = self
+            .user_service
+            .privacy_settings(subject_user_id)
+            .await
+            .map_err(ApiError::from)?;
+        let visible = match side {
+            FollowListSide::Following => settings.show_following,
+            FollowListSide::Followers => settings.show_followers,
+        };
+        if visible {
+            Ok(())
+        } else {
+            Err(ApiError::Authorization(
+                "this account keeps its follow list private".to_string(),
+            ))
+        }
     }
 }
