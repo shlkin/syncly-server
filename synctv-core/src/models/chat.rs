@@ -24,6 +24,7 @@ pub enum ChatMessageType {
     User = 1,
     SystemMemberJoined = 1001,
     SystemPlaybackChanged = 1002,
+    SystemGift = 1003,
 }
 
 impl ChatMessageType {
@@ -33,12 +34,16 @@ impl ChatMessageType {
             Self::User => "user",
             Self::SystemMemberJoined => "system_member_joined",
             Self::SystemPlaybackChanged => "system_playback_changed",
+            Self::SystemGift => "system_gift",
         }
     }
 
     #[must_use]
     pub const fn is_system(self) -> bool {
-        matches!(self, Self::SystemMemberJoined | Self::SystemPlaybackChanged)
+        matches!(
+            self,
+            Self::SystemMemberJoined | Self::SystemPlaybackChanged | Self::SystemGift
+        )
     }
 
     #[must_use]
@@ -61,6 +66,7 @@ impl FromStr for ChatMessageType {
             "user" => Ok(Self::User),
             "system_member_joined" => Ok(Self::SystemMemberJoined),
             "system_playback_changed" => Ok(Self::SystemPlaybackChanged),
+            "system_gift" => Ok(Self::SystemGift),
             other => Err(format!("Unknown chat message type: {other}")),
         }
     }
@@ -70,6 +76,7 @@ i16_enum!(ChatMessageType, "Invalid chat message type", {
     User = 1,
     SystemMemberJoined = 1001,
     SystemPlaybackChanged = 1002,
+    SystemGift = 1003,
 });
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -103,6 +110,26 @@ pub struct ChatMemberJoinedMetadata {
     pub actor_user_id: Option<UserId>,
     pub actor_username: Option<String>,
     pub role: RoomRole,
+}
+
+/// What the room needs to render a gift that was just sent. The catalog fields
+/// are snapshotted here for the same reason `gift_records` snapshots them: the
+/// message must keep saying what was sent even after a rename or a repricing.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatGiftMetadata {
+    pub record_id: i64,
+    pub sender_user_id: UserId,
+    pub sender_username: String,
+    pub recipient_user_id: UserId,
+    pub recipient_username: String,
+    pub gift_key: String,
+    pub gift_name: String,
+    pub gift_icon: String,
+    pub quantity: i32,
+    pub total_points: i64,
+    /// The sender's note, empty when they left none.
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -223,6 +250,7 @@ pub enum ChatMetadata {
     User(ChatUserMetadata),
     MemberJoined(ChatMemberJoinedMetadata),
     PlaybackChanged(ChatPlaybackChangedMetadata),
+    Gift(ChatGiftMetadata),
 }
 
 impl ChatMetadata {
@@ -245,6 +273,7 @@ impl ChatMetadata {
             Self::User(metadata) => Ok(Self::User(metadata.normalized_for_storage()?)),
             Self::MemberJoined(metadata) => Ok(Self::MemberJoined(metadata.clone())),
             Self::PlaybackChanged(metadata) => Ok(Self::PlaybackChanged(metadata.clone())),
+            Self::Gift(metadata) => Ok(Self::Gift(metadata.clone())),
         }
     }
 
@@ -254,6 +283,7 @@ impl ChatMetadata {
             Self::User(_) => ChatMessageType::User,
             Self::MemberJoined(_) => ChatMessageType::SystemMemberJoined,
             Self::PlaybackChanged(_) => ChatMessageType::SystemPlaybackChanged,
+            Self::Gift(_) => ChatMessageType::SystemGift,
         }
     }
 
@@ -261,7 +291,7 @@ impl ChatMetadata {
     pub const fn user(&self) -> Option<&ChatUserMetadata> {
         match self {
             Self::User(metadata) => Some(metadata),
-            Self::MemberJoined(_) | Self::PlaybackChanged(_) => None,
+            Self::MemberJoined(_) | Self::PlaybackChanged(_) | Self::Gift(_) => None,
         }
     }
 }

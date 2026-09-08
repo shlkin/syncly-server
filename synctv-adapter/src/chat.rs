@@ -70,6 +70,7 @@ pub fn chat_message_type_to_proto(message_type: ChatMessageType) -> client_proto
         ChatMessageType::SystemPlaybackChanged => {
             client_proto::ChatMessageType::SystemPlaybackChanged
         }
+        ChatMessageType::SystemGift => client_proto::ChatMessageType::SystemGift,
     }
 }
 
@@ -518,6 +519,31 @@ pub fn chat_metadata_to_proto(
                 },
             )),
         })),
+        ChatMetadata::Gift(payload) => Ok(Some(client_proto::ChatMetadata {
+            metadata: Some(client_proto::chat_metadata::Metadata::Gift(
+                client_proto::ChatGiftMetadata {
+                    record_id: public_id_codec
+                        .encode_gift_record_id(payload.record_id)
+                        .map_err(|error| proto_encode_error("gift record", &error))?,
+                    sender_user_id: encode_user_id_for_proto(
+                        payload.sender_user_id,
+                        public_id_codec,
+                    )?,
+                    sender_username: payload.sender_username.clone(),
+                    recipient_user_id: encode_user_id_for_proto(
+                        payload.recipient_user_id,
+                        public_id_codec,
+                    )?,
+                    recipient_username: payload.recipient_username.clone(),
+                    gift_key: payload.gift_key.clone(),
+                    gift_name: payload.gift_name.clone(),
+                    gift_icon: payload.gift_icon.clone(),
+                    quantity: payload.quantity,
+                    total_points: payload.total_points,
+                    message: payload.message.clone(),
+                },
+            )),
+        })),
         ChatMetadata::PlaybackChanged(payload) => {
             let playback_to_proto = |playback: &synctv_core::models::ChatPlaybackMetadata| {
                 Ok::<_, AdapterError>(client_proto::ChatPlaybackMetadata {
@@ -898,6 +924,7 @@ pub const fn file_object_route_prefix(kind: FileObjectKind) -> Option<&'static s
         FileObjectKind::MediaThumbnail => Some("/api/media/thumbnail-objects"),
         FileObjectKind::RoomCover => Some("/api/room/cover-objects"),
         FileObjectKind::PlaylistCover => Some("/api/playlist/cover-objects"),
+        FileObjectKind::UserProfileBackground => Some("/api/user/profile-background-objects"),
         FileObjectKind::Generic => None,
     }
 }
@@ -923,6 +950,9 @@ pub const fn file_object_access_kind_to_proto(
         FileObjectKind::MediaThumbnail => client_proto::FileObjectAccessKind::MediaThumbnail,
         FileObjectKind::RoomCover => client_proto::FileObjectAccessKind::RoomCover,
         FileObjectKind::PlaylistCover => client_proto::FileObjectAccessKind::PlaylistCover,
+        FileObjectKind::UserProfileBackground => {
+            client_proto::FileObjectAccessKind::UserProfileBackground
+        }
         FileObjectKind::Generic => client_proto::FileObjectAccessKind::Generic,
     }
 }
