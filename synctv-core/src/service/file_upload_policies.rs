@@ -2,6 +2,11 @@ use crate::models::{FileObjectKind, FileUploadPolicy};
 
 pub const MAX_CHAT_ATTACHMENT_SIZE_BYTES: i64 = 50 * 1024 * 1024;
 pub const MAX_USER_AVATAR_SIZE_BYTES: i64 = 5 * 1024 * 1024;
+/// Profile backgrounds are read at full-screen size and may be animated, so the
+/// cap is larger than an avatar's. It stays under the 10 MB body limit on the
+/// background object routes with room for the base64 framing a JSON transport
+/// adds, and under the resumable part size, so one part carries any legal file.
+pub const MAX_USER_PROFILE_BACKGROUND_SIZE_BYTES: i64 = 6 * 1024 * 1024;
 pub const MAX_MEDIA_COVER_SIZE_BYTES: i64 = 10 * 1024 * 1024;
 pub const MAX_MEDIA_THUMBNAIL_SIZE_BYTES: i64 = 10 * 1024 * 1024;
 pub const MAX_ROOM_COVER_SIZE_BYTES: i64 = 10 * 1024 * 1024;
@@ -12,10 +17,18 @@ pub const MAX_CHAT_ATTACHMENT_AUDIO_DURATION_SECONDS: i32 = 10 * 60;
 pub const MAX_CHAT_ATTACHMENT_AUDIO_BITRATE_BPS: i32 = 256 * 1000;
 pub const MAX_USER_AVATAR_WIDTH: i32 = 2048;
 pub const MAX_USER_AVATAR_HEIGHT: i32 = 2048;
+pub const MAX_USER_PROFILE_BACKGROUND_WIDTH: i32 = 4096;
+pub const MAX_USER_PROFILE_BACKGROUND_HEIGHT: i32 = 4096;
 pub const MAX_COVER_IMAGE_WIDTH: i32 = 4096;
 pub const MAX_COVER_IMAGE_HEIGHT: i32 = 4096;
 
 const COVER_IMAGE_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/webp"];
+
+/// Profile backgrounds take GIF on top of the still formats a cover takes: an
+/// animated backdrop is the point of the feature, and GIF is the one animated
+/// format every client here already decodes without a video pipeline.
+const USER_PROFILE_BACKGROUND_MIME_TYPES: &[&str] =
+    &["image/jpeg", "image/png", "image/webp", "image/gif"];
 const CHAT_ATTACHMENT_MIME_TYPES: &[&str] = &[
     "application/json",
     "application/pdf",
@@ -127,6 +140,24 @@ pub fn user_avatar_upload_policy() -> FileUploadPolicy {
         MAX_USER_AVATAR_HEIGHT,
         "users/avatars",
     )
+}
+
+#[must_use]
+pub fn user_profile_background_upload_policy() -> FileUploadPolicy {
+    policy_from_spec(FileUploadPolicySpec {
+        kind: "user_profile_background",
+        object_kind: FileObjectKind::UserProfileBackground,
+        max_size_bytes: MAX_USER_PROFILE_BACKGROUND_SIZE_BYTES,
+        max_width: Some(MAX_USER_PROFILE_BACKGROUND_WIDTH),
+        max_height: Some(MAX_USER_PROFILE_BACKGROUND_HEIGHT),
+        require_image_dimensions: true,
+        max_audio_duration_seconds: None,
+        max_audio_bitrate_bps: None,
+        require_audio_metadata: false,
+        allowed_mime_prefixes: &[],
+        allowed_mime_types: USER_PROFILE_BACKGROUND_MIME_TYPES,
+        storage_namespace: "users/profile-backgrounds",
+    })
 }
 
 #[must_use]

@@ -408,6 +408,7 @@ pub struct FileOwnershipProofRange {
 pub enum FileObjectKind {
     ChatAttachment,
     UserAvatar,
+    UserProfileBackground,
     MediaCover,
     MediaThumbnail,
     RoomCover,
@@ -483,6 +484,7 @@ fn file_object_kind_for_upload_policy(kind: &str) -> Option<FileObjectKind> {
     match kind {
         "chat_attachment" => Some(FileObjectKind::ChatAttachment),
         "user_avatar" => Some(FileObjectKind::UserAvatar),
+        "user_profile_background" => Some(FileObjectKind::UserProfileBackground),
         "media_cover" => Some(FileObjectKind::MediaCover),
         "media_thumbnail" => Some(FileObjectKind::MediaThumbnail),
         "room_cover" => Some(FileObjectKind::RoomCover),
