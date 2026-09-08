@@ -2428,6 +2428,7 @@ fn mark_bilibili_playback_resources(
                     &original_info.medias[0],
                 )
             {
+                let proxy_mode_name = format!("proxy_{mode_name}");
                 let mut proxy_info = original_info.clone();
                 if let Some(media) = proxy_info.medias.first_mut() {
                     if let PlaybackMediaProvider::Bilibili(
@@ -2440,7 +2441,13 @@ fn mark_bilibili_playback_resources(
                             PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest {
                                 version: version.to_string(),
                                 expires_at,
-                                mode_name: mode_name.clone(),
+                                // Named for the entry it is filed under, so the
+                                // URL says `proxy_<mode>` and the handler can
+                                // tell the proxied route from the direct one.
+                                // It strips the prefix back off to find this
+                                // mode in the store, which keeps the provider's
+                                // unmarked names.
+                                mode_name: proxy_mode_name.clone(),
                                 segments: segments.clone(),
                                 headers: headers.clone(),
                             });
@@ -2454,7 +2461,7 @@ fn mark_bilibili_playback_resources(
                         expires_at,
                         &mode_name,
                     );
-                    generated.insert(format!("proxy_{mode_name}"), proxy_info);
+                    generated.insert(proxy_mode_name, proxy_info);
                 }
             }
             continue;
@@ -4491,10 +4498,10 @@ mod tests {
     use super::{
         bilibili_dash_codec_slot, bilibili_dash_label, bilibili_dash_playback_infos,
         bilibili_dash_resource_candidates, bilibili_durl_media, bilibili_durl_resource_candidates,
-        bilibili_live_danmaku_track, bilibili_live_playback_infos, bilibili_subtitle_track,
-        bilibili_upstream, bilibili_vod_danmaku_track, build_bilibili_durl_manifest,
-        default_bilibili_live_mode, mark_bilibili_playback_resources, BilibiliProvider,
-        BilibiliSmsLoginSession, BilibiliSmsLoginTokenCodec,
+        bilibili_live_danmaku_track, bilibili_live_playback_infos, bilibili_playback_info_for_mode,
+        bilibili_subtitle_track, bilibili_upstream, bilibili_vod_danmaku_track,
+        build_bilibili_durl_manifest, default_bilibili_live_mode, mark_bilibili_playback_resources,
+        BilibiliProvider, BilibiliSmsLoginSession, BilibiliSmsLoginTokenCodec,
     };
     use crate::models::media::{
         BilibiliDashAudioStream, BilibiliDashManifest, BilibiliDashManifestSlot,
@@ -5085,6 +5092,60 @@ mod tests {
     }
 
     #[test]
+    fn a_proxied_mode_resolves_to_the_entry_the_store_holds() -> TestResult {
+        // What the cache keeps: the provider's own modes, unmarked. Marking
+        // depends on the requesting client, so it runs per request over a copy
+        // and never reaches the store.
+        let stored = durl_test_result()?;
+
+        let (info, proxied) = bilibili_playback_info_for_mode(&stored, "durl")
+            .ok_or_else(|| anyhow::anyhow!("the stored mode should resolve"))?;
+        assert!(!proxied, "an unprefixed mode is the direct route");
+        assert_eq!(info.medias.len(), 1);
+
+        // The response advertises this name; the store has never heard of it.
+        // Resolving it is what lets the proxied manifest be served at all.
+        let (proxy_info, proxied) = bilibili_playback_info_for_mode(&stored, "proxy_durl")
+            .ok_or_else(|| {
+                anyhow::anyhow!("a derived mode should resolve to the mode it came from")
+            })?;
+        assert!(proxied, "the prefix is what marks the proxied route");
+        assert_eq!(proxy_info.medias.len(), 1);
+
+        assert!(
+            bilibili_playback_info_for_mode(&stored, "proxy_nope").is_none(),
+            "a prefix over an unknown mode is still unknown"
+        );
+        assert!(
+            bilibili_playback_info_for_mode(&stored, "nope").is_none(),
+            "an unknown mode is unknown"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_provider_mode_of_its_own_named_proxy_wins_over_stripping() -> TestResult {
+        // A provider is entitled to call one of its modes `proxy_something`.
+        // That entry is describing itself, not a route this server derived, so
+        // the literal match has to be preferred over stripping the prefix.
+        let mut stored = durl_test_result()?;
+        let info = stored
+            .playback_infos
+            .get("durl")
+            .ok_or_else(|| anyhow::anyhow!("fixture should hold the durl mode"))?
+            .clone();
+        stored.playback_infos.insert("proxy_durl".to_string(), info);
+
+        let (_, proxied) = bilibili_playback_info_for_mode(&stored, "proxy_durl")
+            .ok_or_else(|| anyhow::anyhow!("the literal mode should resolve"))?;
+        assert!(
+            !proxied,
+            "a stored mode named proxy_* is the provider's own, not a derived route"
+        );
+        Ok(())
+    }
+
+    #[test]
     fn durl_manifest_keeps_a_proxy_sibling_for_proxy_only_mode() -> TestResult {
         let media = provider_ok(bilibili_durl_media(
             "MP4",
@@ -5132,9 +5193,18 @@ mod tests {
         assert_eq!(result.default_mode, "proxy_durl");
         assert!(result.playback_infos.contains_key("proxy_durl"));
         assert!(!result.playback_infos.contains_key("durl"));
+        // Both DURL variants render as `hls-manifests/{mode_name}/0`, and the
+        // handler resolves that name straight back through
+        // `playback_infos.get(mode_name)`. A proxy entry still calling itself
+        // "durl" therefore addresses its direct sibling, and the client is
+        // handed bilibili segment URLs that 403 without a Referer no browser
+        // will send.
         assert!(matches!(
-            result.playback_infos["proxy_durl"].medias[0].provider,
-            PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest { .. })
+            &result.playback_infos["proxy_durl"].medias[0].provider,
+            PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest {
+                mode_name,
+                ..
+            }) if mode_name == "proxy_durl"
         ));
         assert!(matches!(
             result.playback_infos["proxy_durl"].subtitles[0].provider,
@@ -5175,6 +5245,13 @@ mod tests {
         assert_eq!(proxy_only.default_mode, "proxy_durl");
         assert!(!proxy_only.playback_infos.contains_key("durl"));
         assert_eq!(proxy_only.playback_infos["proxy_durl"].medias.len(), 1);
+        assert!(matches!(
+            &proxy_only.playback_infos["proxy_durl"].medias[0].provider,
+            PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest {
+                mode_name,
+                ..
+            }) if mode_name == "proxy_durl"
+        ));
         assert!(matches!(
             proxy_only.playback_infos["proxy_durl"].subtitles[0].provider,
             PlaybackSubtitleProvider::Bilibili(PlaybackBilibiliSubtitle::Proxy { .. })
@@ -5732,36 +5809,28 @@ impl BilibiliProvider {
     ) -> Result<super::playback_transport::PlaybackTransportAction, ProviderError> {
         let versioned =
             super::playback_transport::lookup_versioned(store, version, request_context).await?;
-        let playback_info = versioned
-            .result
-            .playback_infos
-            .get(mode_name)
-            .ok_or(ProviderError::NotFound)?;
+        let (playback_info, proxied) =
+            bilibili_playback_info_for_mode(&versioned.result, mode_name)
+                .ok_or(ProviderError::NotFound)?;
         let media = playback_info
             .medias
             .get(url_index)
             .ok_or(ProviderError::NotFound)?;
-        if let PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DirectDurlManifest {
-            segments,
-            ..
-        }) = &media.provider
+        // Both durl variants hold the same segment list; what differs is where
+        // the manifest points. Proxied, the segments come back through this
+        // server, which is the only way a browser can fetch them — bilivideo
+        // answers 403 without a `Referer` it cannot set on a media request.
+        if let PlaybackMediaProvider::Bilibili(
+            PlaybackBilibiliMedia::DirectDurlManifest { segments, .. }
+            | PlaybackBilibiliMedia::DurlManifest { segments, .. },
+        ) = &media.provider
         {
-            return Ok(
-                super::playback_transport::PlaybackTransportAction::M3u8DirectBody {
-                    body: build_bilibili_durl_manifest(segments)?.into_bytes(),
-                },
-            );
-        }
-        if let PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest {
-            segments,
-            ..
-        }) = &media.provider
-        {
-            return Ok(
-                super::playback_transport::PlaybackTransportAction::M3u8BodyRewrite {
-                    body: build_bilibili_durl_manifest(segments)?.into_bytes(),
-                },
-            );
+            let body = build_bilibili_durl_manifest(segments)?.into_bytes();
+            return Ok(if proxied {
+                super::playback_transport::PlaybackTransportAction::M3u8BodyRewrite { body }
+            } else {
+                super::playback_transport::PlaybackTransportAction::M3u8DirectBody { body }
+            });
         }
         let url = media.upstream_url().ok_or(ProviderError::NotFound)?;
         let headers = media.upstream_headers();
@@ -5786,11 +5855,12 @@ impl BilibiliProvider {
         let versioned =
             super::playback_transport::lookup_versioned(store, request.version, request_context)
                 .await?;
-        let media = versioned
-            .result
-            .playback_infos
-            .get(request.mode_name)
-            .and_then(|info| info.medias.get(request.media_index))
+        let (playback_info, proxied) =
+            bilibili_playback_info_for_mode(&versioned.result, request.mode_name)
+                .ok_or(ProviderError::NotFound)?;
+        let media = playback_info
+            .medias
+            .get(request.media_index)
             .ok_or(ProviderError::NotFound)?;
         let headers = media.upstream_headers();
         let headers = if headers.is_empty() {
@@ -5806,10 +5876,15 @@ impl BilibiliProvider {
                 },
             )
         } else {
-            if matches!(
-                &media.provider,
-                PlaybackMediaProvider::Bilibili(PlaybackBilibiliMedia::DurlManifest { .. })
-            ) {
+            if proxied
+                && matches!(
+                    &media.provider,
+                    PlaybackMediaProvider::Bilibili(
+                        PlaybackBilibiliMedia::DurlManifest { .. }
+                            | PlaybackBilibiliMedia::DirectDurlManifest { .. }
+                    )
+                )
+            {
                 let urls = bilibili_durl_resource_candidates(media, request.target_url)
                     .ok_or(ProviderError::NotFound)?;
                 return Ok(
@@ -6198,6 +6273,41 @@ fn bilibili_durl_media(
             headers: bilibili_headers(),
         }),
     ))
+}
+
+/// Splits a playback mode name into the mode the store holds and whether the
+/// caller was handed the proxied route.
+///
+/// The cache keeps the provider's own result, because marking depends on the
+/// requesting client and so runs per request over a copy. Derived modes are
+/// named `proxy_<mode>` — this file builds them with `format!("proxy_{...}")`
+/// and skips them with `starts_with("proxy_")` — so a request naming one has to
+/// be resolved back before anything can be looked up.
+fn split_bilibili_playback_mode(mode_name: &str) -> (&str, bool) {
+    match mode_name.strip_prefix("proxy_") {
+        Some(base) => (base, true),
+        None => (mode_name, false),
+    }
+}
+
+/// The playback entry a request's mode name refers to, and whether it asked for
+/// the proxied route.
+///
+/// A stored entry under the literal name wins: a provider whose own mode is
+/// called `proxy_something` is describing itself, not a route this server
+/// derived.
+fn bilibili_playback_info_for_mode<'a>(
+    result: &'a PlaybackResult,
+    mode_name: &str,
+) -> Option<(&'a PlaybackInfo, bool)> {
+    if let Some(info) = result.playback_infos.get(mode_name) {
+        return Some((info, false));
+    }
+    let (base, proxied) = split_bilibili_playback_mode(mode_name);
+    if !proxied {
+        return None;
+    }
+    result.playback_infos.get(base).map(|info| (info, true))
 }
 
 fn bilibili_durl_resource_candidates(

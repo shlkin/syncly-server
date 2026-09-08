@@ -198,7 +198,9 @@ impl BilibiliService {
     pub fn new() -> Result<Self, reqwest::Error> {
         let ssrf_guard = synctv_common::ssrf::SsrfGuard::strict_policy();
         let client = crate::provider_http_client_builder(ssrf_guard.clone())
-            .user_agent(crate::PROVIDER_USER_AGENT)
+            // Same reason as the client's own agent: a browser-shaped one
+            // from a server address is rejected by Bilibili's WAF with 412.
+            .user_agent(super::client::USER_AGENT)
             .build()?;
         Ok(Self {
             client,

@@ -37,7 +37,19 @@ static RE_BVID: LazyLock<Result<Regex, regex::Error>> =
     LazyLock::new(|| Regex::new(r"BV[a-zA-Z0-9]+"));
 static RE_EPID: LazyLock<Result<Regex, regex::Error>> = LazyLock::new(|| Regex::new(r"ep(\d+)"));
 
-use crate::PROVIDER_USER_AGENT as USER_AGENT;
+/// Bilibili's edge WAF rejects browser-shaped user agents that arrive without a
+/// browser's TLS fingerprint, `Sec-Fetch-*` headers and session cookies. From a
+/// server address the shared [`crate::PROVIDER_USER_AGENT`] Chrome string gets
+/// HTTP 412 and an anti-crawl HTML page instead of JSON on
+/// `/x/web-interface/view`, which is the call that resolves a link into a
+/// playable `cid` — so the app reported "some Bilibili videos fail to play".
+///
+/// Measured against `api.bilibili.com` from the deployment host: desktop Chrome
+/// 120, Chrome 131, iOS Safari and a bare `Mozilla/5.0` all returned 412, while
+/// every non-browser agent returned `code: 0`. The media CDN does not care which
+/// agent it sees — it only requires [`REFERER`] — so playback itself is
+/// unaffected by this choice.
+pub(super) const USER_AGENT: &str = "SyncTV/1.0";
 const REFERER: &str = "https://www.bilibili.com";
 const LIVE_ORIGIN: &str = "https://live.bilibili.com";
 const BILIBILI_SHORT_LINK_MAX_REDIRECTS: usize = 5;

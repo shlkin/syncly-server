@@ -709,11 +709,20 @@ impl DirectUrlProvider {
             .get(url_index)
             .ok_or(ProviderError::NotFound)?;
         let url = media.upstream_url().ok_or(ProviderError::NotFound)?;
+        // Files keep the ranged cache — they are seekable and slices serve
+        // every scrubbing viewer from one upstream read. A live raw stream is
+        // endless and arrives at broadcast rate, so a slice never fills and
+        // the first byte never leaves; it has to be streamed through.
+        let live = versioned.result.playback_kind == Some(crate::models::PlaybackKind::Live);
         Ok(PlaybackTransportAction::FetchAndForward {
             url: url.to_string(),
             headers: media.upstream_headers(),
             range_header: range_header.map(ToString::to_string),
-            proxy_strategy: super::PlaybackResourceProxyStrategy::SliceCache,
+            proxy_strategy: if live {
+                super::PlaybackResourceProxyStrategy::Stream
+            } else {
+                super::PlaybackResourceProxyStrategy::SliceCache
+            },
         })
     }
 
@@ -764,11 +773,17 @@ impl DirectUrlProvider {
                 headers: media.upstream_headers(),
             })
         } else {
+            // Streamed through, never slice-cached: a live edge segment is
+            // written while it is served — the origin trickles it at broadcast
+            // rate — and SliceCache holds the first byte until a whole slice
+            // exists, which is after every player has given up. A segment is
+            // also consumed exactly once, immediately, so the cache bought
+            // nothing for the fast origins either.
             Ok(PlaybackTransportAction::FetchAndForward {
                 url: request.target_url.to_string(),
                 headers: media.upstream_headers(),
                 range_header: request.range_header.map(ToString::to_string),
-                proxy_strategy: super::PlaybackResourceProxyStrategy::SliceCache,
+                proxy_strategy: super::PlaybackResourceProxyStrategy::Stream,
             })
         }
     }
@@ -822,11 +837,12 @@ impl DirectUrlProvider {
                 headers: media.upstream_headers(),
             })
         } else {
+            // Same rule as the HLS segments: consumed once, possibly live.
             Ok(PlaybackTransportAction::FetchAndForward {
                 url: target_url,
                 headers: media.upstream_headers(),
                 range_header: request.range_header.map(ToString::to_string),
-                proxy_strategy: super::PlaybackResourceProxyStrategy::SliceCache,
+                proxy_strategy: super::PlaybackResourceProxyStrategy::Stream,
             })
         }
     }
